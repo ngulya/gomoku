@@ -1,16 +1,18 @@
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
-#include <string> // подключаем строки
-#include <fstream> // подключаем файлы
+#include <string>
+#include <fstream>
 using namespace std;
 
+// need create class
 typedef struct			node
 {
 	vector<vector<int> >	map_in_node;
 	int 					who_going;	
 	vector<struct node* >	nodes;
 }	node;
+
 
 vector<vector<int> > 	read_from_file(){
 
@@ -20,7 +22,7 @@ vector<vector<int> > 	read_from_file(){
 	string tmp_s;
 	
 	ifstream file("map.txt");
-	while(getline(file, s)){ // пока не достигнут конец файла класть очередную строку в переменную (s)
+	while(getline(file, s)){
 		vector<int> tmp;
 		tmp_s = "";
 		for (int i = 0; i < s.size(); ++i)
@@ -105,6 +107,36 @@ void	diagonal_right_up(vector< vector<int> > map, int size, int who_going){
 	
 }
 
+
+void	row(vector< vector<int> > map, int size, int who_going){
+
+	vector<int> tmp(size);	
+	for (int x = 0; x < size ; ++x)
+	{
+		int i = 0;
+		for (int y = 0; y < size ; ++y)
+		{
+			printf("%d ", map[x][y]);
+			tmp[i] = map[x][y];
+			i++;
+		}
+		printf("\n");
+	}
+}
+
+
+void	column(vector< vector<int> > map, int size, int who_going){
+
+	for (int y = 0; y < size ; ++y)
+	{
+		for (int x = 0; x < size ; ++x)
+		{
+			printf("%d ", map[x][y]);
+		}
+		printf("\n");
+	}
+}
+
 int main()
 {	
 	// int size;
@@ -113,7 +145,7 @@ int main()
 	_print(now_map);
 	printf("\n");
 
-	diagonal_right_up(now_map, now_map.size(), 1);
+	row(now_map, now_map.size(), 1);
 
 	// node *first_node = new node;
 	
