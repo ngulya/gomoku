@@ -17,8 +17,6 @@ typedef struct			node
 }	node;
 
 
-
-
 class Tree
 {
 public:
