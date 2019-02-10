@@ -1,17 +1,5 @@
-#include <iostream>
-#include <vector>
-#include <stdlib.h>
-#include <string>
-#include <fstream>
-using namespace std;
-
-// need create class
-typedef struct			node
-{
-	vector<vector<int> >	map_in_node;
-	int 					who_going;	
-	vector<struct node* >	nodes;
-}	node;
+#include "class_tree.hpp"
+// using namespace std;
 
 
 vector<vector<int> > 	read_from_file(){
@@ -53,7 +41,8 @@ void 	_print(	vector<vector<int> > the_vector){
 	for (int i = 0; i < size; ++i)
 	{
 		for (int i2 = 0; i2 < size; ++i2)
-			cout<<the_vector[i][i2]<<"  ";
+			printf("%2d", the_vector[i][i2]);
+
 		cout<<endl;
 	}
 	
@@ -110,20 +99,24 @@ void	diagonal_right_up(vector< vector<int> > map, int size, int who_going){
 
 void	row(vector< vector<int> > map, int size, int who_going){
 
-	vector<int> tmp(size);	
+	int num;
+	// vector<int> tmp(size);	
 	for (int x = 0; x < size ; ++x)
 	{
-		int i = 0;
+		// int i = 0;
+		num = 0;
 		for (int y = 0; y < size ; ++y)
 		{
+			if (map[x][y] == who_going){
+				num++;
+			}
 			printf("%d ", map[x][y]);
-			tmp[i] = map[x][y];
-			i++;
+			// tmp[i] = map[x][y];
+			// i++;
 		}
 		printf("\n");
 	}
 }
-
 
 void	column(vector< vector<int> > map, int size, int who_going){
 
@@ -142,11 +135,12 @@ int main()
 	// int size;
 	vector< vector<int> > now_map;
 	now_map = read_from_file();
-	_print(now_map);
-	printf("\n");
+	// _print(now_map);
+	// printf("\n");
+	// row(now_map, now_map.size(), 1);
 
-	row(now_map, now_map.size(), 1);
-
+	Tree* 	p = new Tree(now_map, 3, 5);
+	(*p).return_last_dep();
 	// node *first_node = new node;
 	
 	// tmp_node->who_going = 1;
