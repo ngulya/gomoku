@@ -48,30 +48,113 @@ void 	_print(	vector<vector<int> > the_vector){
 	
 }
 
-void	diagonal_left_up(vector< vector<int> > map, int size, int who_going){
+void	diagonal_left_up(vector< vector<int> > now_map, int size, int who_going){
+	vector< vector<int> > cross_map;
+	cross_map = now_map;
+	for (int x = 0; x < size ; ++x)
+		for (int y = 0; y < size ; ++y)
+			cross_map[x][y] = 0;
+
+	int X,Y;
+	int up_x, up_y;
+	int num;
 	for (int x = 0; x < size ; ++x)
 	{
-
+		up_x = -1;
+		up_y = -1;
+		num = 0;
 		for (int y = x; y >= 0; --y)
 		{
-			printf("%d ", map[x-y][y]);
+			X = x-y;
+			Y = y;
+			// printf("%d ", now_map[x-y][y]);
+			if (now_map[X][Y] == who_going)
+			{
+				if (X > 0 and now_map[X-1][Y+1] == 0){
+					up_x = X-1;
+					up_y = Y+1;
+				}
+				num++;
+			}
+			else
+			{
+				if(num)
+				{
+					if (now_map[X][Y] == 0)
+						cross_map[X][Y] = num;
+					if (up_x != -1)
+						cross_map[up_x][up_y] = num;
+				}
+			up_x = -1;
+			up_y = -1;
+			num = 0;
+			}
 		}
-		printf("\n");
-	
-	
+		if(num and up_x != -1)
+			cross_map[up_x][up_y] = num;
+		// printf("\n");
 	}
+	for (int x = 0; x < size ; ++x)
+	{
+		printf("\n[%d]\nno ", x);
+		for (int y = x; y >= 0; --y)
+			printf("%d ", now_map[x-y][y]);
+		printf("\nmy ");
+		for (int y = x; y >= 0; --y)
+			printf("%d ", cross_map[x-y][y]);
+
+		printf("\n");
+	}
+	printf("\n");
 	for (int x = 1; x < size ; ++x)
 	{
-
+		up_x = -1;
+		up_y = -1;
+		num = 0;
 		for (int y = size - 1; y >= x; --y)
 		{
-			printf("%d ", map[size - 1 + x - y][y]);
+			X = size - 1 + x - y;
+			Y = y;
+			// printf("%d ", now_map[size - 1 + x - y][y]);
+			if (now_map[X][Y] == who_going)
+			{
+				if (X > 0 and now_map[X-1][Y+1] == 0){
+					up_x = X-1;
+					up_y = Y+1;
+				}
+				num++;
+			}
+			else
+			{
+				if(num)
+				{
+					if (now_map[X][Y] == 0)
+						cross_map[X][Y] = num;
+					if (up_x != -1)
+						cross_map[up_x][up_y] = num;
+				}
+			up_x = -1;
+			up_y = -1;
+			num = 0;
+			}
 		}
-		printf("\n");
-	
+		if(num and up_x != -1)
+			cross_map[up_x][up_y] = num;
+		// printf("\n");
 	
 	}
 
+	for (int x = 1; x < size ; ++x)
+	{
+		printf("\n[%d]\nno ", x);
+		for (int y = size - 1; y >= x; --y)
+			printf("%d ", now_map[size - 1 + x - y][y]);
+		printf("\nmy ");
+		for (int y = size - 1; y >= x; --y)
+			printf("%d ", cross_map[size - 1 + x - y][y]);
+
+		printf("\n");
+	}
 }
 
 
@@ -124,15 +207,15 @@ void	diagonal_right_up(vector< vector<int> > now_map, int size, int who_going){
 	}
 	// for (int x = 0; x < size ; ++x)
 	// {
+	// 	printf("\n[%d]\nno ", x);
 	// 	for (int y = size - 1 - x; y <= size - 1; ++y)
-	// 	{
-	// 		X = x - (size - 1 - y);
-	// 		Y = y;
-	// 		printf("%d ", cross_map[X][Y]);
-	// 	}
+	// 		printf("%d ", now_map[x - (size - 1 - y)][y]);
+	// 	printf("\nmy ");
+		
+	// 	for (int y = size - 1 - x; y <= size - 1; ++y)
+	// 		printf("%d ", cross_map[x - (size - 1 - y)][y]);
 	// 	printf("\n");
 	// }
-
 
 	for (int x = 1; x < size ; ++x)
 	{
@@ -171,18 +254,19 @@ void	diagonal_right_up(vector< vector<int> > now_map, int size, int who_going){
 			cross_map[up_x][up_y] = num;
 		// printf("\n");
 	}
-	// printf("1111\n");
-	// for (int x = 1; x < size ; ++x)
-	// {
-	// 	printf("[%d]\n", x);
-	// 	for (int y = 0; y <= size - 1 - x; ++y)
-	// 		cross_map[x+y][y];
-	// 		// printf("%d ", cross_map[x+y][y]);
+	for (int x = 1; x < size ; ++x)
+	{
+		printf("\n[%d]\nno ", x);
+		for (int y = 0; y <= size - 1 - x; ++y)
+			printf("%d ", now_map[x+y][y]);
+		printf("\nmy ");
+		
+		for (int y = 0; y <= size - 1 - x; ++y)
+			printf("%d ", cross_map[x+y][y]);
+		printf("\n");
+	}
 
-	// 	printf("\n");
-	// }
-	// printf("2222\n");
-	printf("need free\n");
+	return;
 }
 
 
@@ -357,7 +441,7 @@ int main()
 	diagonal_right_up(now_map, now_map.size(), 1);
 
 
-	printf("asfasfasf\n");
+	// printf("asfasfasf\n");
 
 	// Tree* 	p = new Tree(now_map, 3, 5);
 	// (*p).return_last_dep();
