@@ -25,135 +25,134 @@ vector<int>				check(vector<int>  tmp, node *now_node);
 void					_print(	vector<vector<int> > the_vector);
 
 
-void	diagonal_left_up(node *now_node, bool you){
+void	diagonal_left_up(node *nde, bool you){
 	vector<int>  _new;
 	int i;
-	for (int x = 0; x < now_node->size ; ++x)
+	for (int x = 0; x < nde->size ; ++x)
 	{
 		vector<int> tmp;
 		for (int y = x; y >= 0; --y)
-			tmp.push_back(now_node->map_in_node[x-y][y]);
+			tmp.push_back(nde->map_in_node[x-y][y]);
 		i = 0;
 		if (you){
-			_new = check(tmp, now_node);
-			for (int y = x; y >= 0; --y)
-				now_node->cross_map[x-y][y] += _new[i++];
+			_new = check(tmp, nde);
+			for (int y = x; y >= 0; --y, i++)
+				nde->cross_map[x-y][y] = _new[i] > nde->cross_map[x-y][y] ? _new[i] : nde->cross_map[x-y][y];
 		}
 		else{
-			_new = check_not_you(tmp, now_node);
-			for (int y = x; y >= 0; --y)
-				now_node->cross_map_not_you[x-y][y] += _new[i++];
+			_new = check_not_you(tmp, nde);
+			for (int y = x; y >= 0; --y, i++)
+				nde->cross_map_not_you[x-y][y] = _new[i] > nde->cross_map_not_you[x-y][y] ? _new[i] : nde->cross_map_not_you[x-y][y];
 		}
 
 
 	}
-	for (int x = 1; x < now_node->size ; ++x)
+	for (int x = 1; x < nde->size ; ++x)
 	{
 		vector<int> tmp;
-		for (int y = now_node->size - 1; y >= x; --y)
-			tmp.push_back(now_node->map_in_node[now_node->size - 1 + x - y][y]);
+		for (int y = nde->size - 1; y >= x; --y)
+			tmp.push_back(nde->map_in_node[nde->size - 1 + x - y][y]);
 
 		i = 0;
 		if (you){
-			_new = check(tmp, now_node);
-			for (int y = now_node->size - 1; y >= x; --y)
-				now_node->cross_map[now_node->size - 1 + x - y][y] += _new[i++];
+			_new = check(tmp, nde);
+			for (int y = nde->size - 1; y >= x; --y, i++)
+				nde->cross_map[nde->size - 1 + x - y][y] = _new[i] > nde->cross_map[nde->size - 1 + x - y][y] ? _new[i] : nde->cross_map[nde->size - 1 + x - y][y];
 		}
 		else{
-			_new = check_not_you(tmp, now_node);
-			for (int y = now_node->size - 1; y >= x; --y)
-				now_node->cross_map_not_you[now_node->size - 1 + x - y][y] += _new[i++];
+			_new = check_not_you(tmp, nde);
+			for (int y = nde->size - 1; y >= x; --y, i++)
+				nde->cross_map_not_you[nde->size - 1 + x - y][y] = _new[i] > nde->cross_map_not_you[nde->size - 1 + x - y][y] ? _new[i] : nde->cross_map_not_you[nde->size - 1 + x - y][y];
 		}
 
-	}
-}
-
-
-void	diagonal_right_up(node *now_node, bool you){
-	vector<int>  _new;
-	int i;
-	for (int x = 0; x < now_node->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = now_node->size - 1 - x; y <= now_node->size - 1; ++y)
-			tmp.push_back(now_node->map_in_node[x - (now_node->size - 1 - y)][y]);
-
-		i = 0;
-		if (you){
-			_new = check(tmp, now_node);
-			for (int y = now_node->size - 1 - x; y <= now_node->size - 1; ++y)
-				now_node->cross_map[x - (now_node->size - 1 - y)][y] += _new[i++];
-		}
-		else{
-			_new = check_not_you(tmp, now_node);
-			for (int y = now_node->size - 1 - x; y <= now_node->size - 1; ++y)
-				now_node->cross_map_not_you[x - (now_node->size - 1 - y)][y] += _new[i++];
-		}
-
-	}
-	for (int x = 1; x < now_node->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = 0; y <= now_node->size - 1 - x; ++y)
-			tmp.push_back(now_node->map_in_node[x+y][y]);
-
-		i = 0;
-		if (you){
-			_new = check(tmp, now_node);
-			for (int y = 0; y <= now_node->size - 1 - x; ++y)
-				now_node->cross_map[x+y][y] += _new[i++];
-		}
-		else{
-			_new = check_not_you(tmp, now_node);
-			for (int y = 0; y <= now_node->size - 1 - x; ++y)
-				now_node->cross_map_not_you[x+y][y] += _new[i++];
-		}
 	}
 }
 
 
-void	row(node *now_node, bool you){
+void	diagonal_right_up(node *nde, bool you){
 	vector<int>  _new;
 	int i;
-	for (int x = 0; x < now_node->size ; ++x)
+	for (int x = 0; x < nde->size ; ++x)
 	{
 		vector<int> tmp;
-		for (int y = 0; y < now_node->size ; ++y)
-			tmp.push_back(now_node->map_in_node[x][y]);
+		for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y)
+			tmp.push_back(nde->map_in_node[x - (nde->size - 1 - y)][y]);
+
+		i = 0;
+		if (you){
+			_new = check(tmp, nde);
+			for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++)
+				nde->cross_map[x - (nde->size - 1 - y)][y] = _new[i] > nde->cross_map[x - (nde->size - 1 - y)][y] ? _new[i] : nde->cross_map[x - (nde->size - 1 - y)][y];
+		}
+		else{
+			_new = check_not_you(tmp, nde);
+			for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++)
+				nde->cross_map_not_you[x - (nde->size - 1 - y)][y] = _new[i] > nde->cross_map_not_you[x - (nde->size - 1 - y)][y] ? _new[i] : nde->cross_map_not_you[x - (nde->size - 1 - y)][y];
+		}
+
+	}
+	for (int x = 1; x < nde->size ; ++x)
+	{
+		vector<int> tmp;
+		for (int y = 0; y <= nde->size - 1 - x; ++y)
+			tmp.push_back(nde->map_in_node[x+y][y]);
+		i = 0;
+		if (you){
+			_new = check(tmp, nde);
+			for (int y = 0; y <= nde->size - 1 - x; ++y, i++)
+				nde->cross_map[x+y][y] = _new[i] > nde->cross_map[x+y][y] ? _new[i] : nde->cross_map[x+y][y];
+		}
+		else{
+			_new = check_not_you(tmp, nde);
+			for (int y = 0; y <= nde->size - 1 - x; ++y, i++)
+				nde->cross_map_not_you[x+y][y] = _new[i] > nde->cross_map_not_you[x+y][y] ? _new[i] : nde->cross_map_not_you[x+y][y];
+		}
+	}
+}
+
+
+void	row(node *nde, bool you){
+	vector<int>  _new;
+	int i;
+	for (int x = 0; x < nde->size ; ++x)
+	{
+		vector<int> tmp;
+		for (int y = 0; y < nde->size ; ++y)
+			tmp.push_back(nde->map_in_node[x][y]);
 		
 		i = 0;
 		if (you){
-			_new = check(tmp, now_node);
-			for (int y = 0; y < now_node->size ; ++y)
-				now_node->cross_map[x][y] += _new[i++];
+			_new = check(tmp, nde);
+			for (int y = 0; y < nde->size ; ++y, i++)
+				nde->cross_map[x][y] = _new[i] > nde->cross_map[x][y] ? _new[i] : nde->cross_map[x][y];
 		}
 		else{
-			_new = check_not_you(tmp, now_node);
-			for (int y = 0; y < now_node->size ; ++y)
-				now_node->cross_map_not_you[x][y] += _new[i++];
+			_new = check_not_you(tmp, nde);
+			for (int y = 0; y < nde->size ; ++y, i++)
+				nde->cross_map_not_you[x][y] = _new[i] > nde->cross_map_not_you[x][y] ? _new[i] : nde->cross_map_not_you[x][y];
 		}
 
 	}
 }
 
-void	column(node *now_node, bool you){
+void	column(node *nde, bool you){
 	vector<int>  _new;
 	int i;
-	for (int y = 0; y < now_node->size ; ++y)
+	for (int y = 0; y < nde->size ; ++y)
 	{
 		vector<int> tmp;
-		for (int x = 0; x < now_node->size ; ++x)
-			tmp.push_back(now_node->map_in_node[x][y]);
+		for (int x = 0; x < nde->size ; ++x)
+			tmp.push_back(nde->map_in_node[x][y]);
 		i = 0;
 		if (you){
-			_new = check(tmp, now_node);
-			for (int x = 0; x < now_node->size ; ++x)
-				now_node->cross_map[x][y] += _new[i++];
+			_new = check(tmp, nde);
+			for (int x = 0; x < nde->size ; ++x, i++)
+				nde->cross_map[x][y] = _new[i] > nde->cross_map[x][y] ? _new[i] : nde->cross_map[x][y];
 		}
 		else{
-			_new = check_not_you(tmp, now_node);
-			for (int x = 0; x < now_node->size ; ++x)
-				now_node->cross_map_not_you[x][y] += _new[i++];
+			_new = check_not_you(tmp, nde);
+			for (int x = 0; x < nde->size ; ++x, i++)
+				nde->cross_map_not_you[x][y] = _new[i] > nde->cross_map_not_you[x][y] ? _new[i] : nde->cross_map_not_you[x][y];
 		}
 	}
 }
@@ -181,6 +180,8 @@ int main()
 	diagonal_right_up(first_node, true);
 	diagonal_left_up(first_node, false);
 	diagonal_left_up(first_node, true);
+
+
 	
 	_print(first_node->map_in_node);
 	printf("\ncross_map_not_you:");
@@ -188,7 +189,45 @@ int main()
 	printf("\ncross_map:");
 	_print(first_node->cross_map);
 
-	// printf("\n");
+
+	int tmp_map, tmp_map_not_you, for_tmp;
+	vector<int>  most_biggest;
+	vector<int>  _x;
+	vector<int>  _y;
+
+	for (int x = 0; x < first_node->size; ++x)
+		for (int y = 0; y < first_node->size; ++y){
+			tmp_map_not_you = first_node->cross_map_not_you[x][y];
+			tmp_map = first_node->cross_map[x][y];
+			if (tmp_map != 0){
+				for_tmp = 1;
+				while(tmp_map-- > 1)
+					for_tmp *= 10;
+				tmp_map = for_tmp;
+			}
+			if (tmp_map_not_you != 0){
+				for_tmp = 1;
+				while(tmp_map_not_you-- > 1)
+					for_tmp *= 10;
+				tmp_map_not_you = for_tmp;
+			}
+			if ((tmp_map + tmp_map_not_you) > 0){
+				most_biggest.push_back(tmp_map + tmp_map_not_you);
+				_x.push_back(x);
+				_y.push_back(y);
+			}
+			first_node->cross_map[x][y] = tmp_map + tmp_map_not_you;
+		}
+	printf("\nUPD cross_map:");
+	_print(first_node->cross_map);
+
+	for (int i = 0; i < most_biggest.size(); ++i)
+		printf("%4d", most_biggest[i]);
+	printf("\n");
+	for (int i = 0; i < most_biggest.size(); ++i)
+		printf("%d|%d ",_x[i],_y[i]);
+
+	printf("\n");
 	// _print(cross_map);
 
 	// Tree* 	p = new Tree();
@@ -200,7 +239,6 @@ int main()
 	// printf("%lu\n", tmp_node->nodes.size());
 	// // tmp_node->nodes[0]->who_going = 2;
 	// // printf("%d\n", tmp_node->nodes[0]->who_going);
-
 	return 0;
 }
 
@@ -245,7 +283,7 @@ void 	_print(	vector<vector<int> > the_vector){
 	{
 		printf("%d| ", i);
 		for (int i2 = 0; i2 < size; ++i2)
-			printf("%2d", the_vector[i][i2]);
+			printf("%4d", the_vector[i][i2]);
 		printf("\n");
 	}
 	
@@ -269,9 +307,9 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0)
-					_new[i] += num;
+					_new[i] = num > _new[i] ? num : _new[i];
 				if (left_i != -1)
-					_new[left_i] += num;
+					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 			}
 			left_i = -1;
 			num = 0;
@@ -279,7 +317,7 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 	}
 
 	if(num and left_i != -1)
-		_new[left_i] += num;
+		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 	return _new;
 }
 
@@ -299,22 +337,17 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 		{
 			if(num)
 			{
-				if (num <= 5)
-					now_node->nums_vector[num - 1] += 1;
 				if (tmp[i] == 0)
-					_new[i] += num;
+					_new[i] = num > _new[i] ? num : _new[i];
 				if (left_i != -1)
-					_new[left_i] += num;
+					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 			}
 			left_i = -1;
 			num = 0;
 		}
 	}
 
-	if(num and left_i != -1){
-		if (num <= 5)
-			now_node->nums_vector[num - 1] += 1;
-		_new[left_i] += num;
-	}
+	if(num and left_i != -1)
+		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 	return _new;
 }
