@@ -1,133 +1,149 @@
-#include "class_tree.hpp"
+// #include "class_tree.hpp"
+# include <iostream>
+# include <vector>
+# include <iostream>
+# include <stdlib.h>
+# include <string>
+# include <fstream>
+using namespace std;
+
+typedef struct			node
+{
+	vector<vector<int> >	map_in_node;
+	vector<vector<int> >	cross_map;
+	vector<int> 			nums_vector;
+	int 					who_going;
+	int 					level_depth;
+	int 					size;
+	vector<struct node* >	nodes;
+}	node;
+
 vector<vector<int> >	read_from_file();
-vector<int>				check(vector<int>  tmp, int who_going);
+vector<int>				check(vector<int>  tmp, node *now_node);
 void					_print(	vector<vector<int> > the_vector);
 
 
-vector< vector<int> >	diagonal_left_up(vector< vector<int> > now_map, int size, int who_going, vector< vector<int> > cross_map){
+void	diagonal_left_up(node *now_node){
 	vector<int>  _new;
 	int i;
-	for (int x = 0; x < size ; ++x)
+	for (int x = 0; x < now_node->size ; ++x)
 	{
 		vector<int> tmp;
 		for (int y = x; y >= 0; --y)
-			tmp.push_back(now_map[x-y][y]);
+			tmp.push_back(now_node->map_in_node[x-y][y]);
 
-		_new = check(tmp, who_going);
+		_new = check(tmp, now_node);
 		i = 0;
 		for (int y = x; y >= 0; --y)
-			cross_map[x-y][y] += _new[i++];
+			now_node->cross_map[x-y][y] += _new[i++];
 
 	}
-	for (int x = 1; x < size ; ++x)
+	for (int x = 1; x < now_node->size ; ++x)
 	{
 		vector<int> tmp;
-		for (int y = size - 1; y >= x; --y)
-			tmp.push_back(now_map[size - 1 + x - y][y]);
-		_new = check(tmp, who_going);
+		for (int y = now_node->size - 1; y >= x; --y)
+			tmp.push_back(now_node->map_in_node[now_node->size - 1 + x - y][y]);
+		_new = check(tmp, now_node);
 		i = 0;
-		for (int y = size - 1; y >= x; --y)
-			cross_map[size - 1 + x - y][y] += _new[i++];
+		for (int y = now_node->size - 1; y >= x; --y)
+			now_node->cross_map[now_node->size - 1 + x - y][y] += _new[i++];
 
 	}
-	return cross_map;
 }
 
 
-vector< vector<int> >	diagonal_right_up(vector< vector<int> > now_map, int size, int who_going, vector< vector<int> > cross_map){
+void	diagonal_right_up(node *now_node){
 	vector<int>  _new;
 	int i;
-	for (int x = 0; x < size ; ++x)
+	for (int x = 0; x < now_node->size ; ++x)
 	{
 		vector<int> tmp;
-		for (int y = size - 1 - x; y <= size - 1; ++y)
-			tmp.push_back(now_map[x - (size - 1 - y)][y]);
+		for (int y = now_node->size - 1 - x; y <= now_node->size - 1; ++y)
+			tmp.push_back(now_node->map_in_node[x - (now_node->size - 1 - y)][y]);
 
-		_new = check(tmp, who_going);
+		_new = check(tmp, now_node);
 		i = 0;
-		for (int y = size - 1 - x; y <= size - 1; ++y)
-			cross_map[x - (size - 1 - y)][y] += _new[i++];
+		for (int y = now_node->size - 1 - x; y <= now_node->size - 1; ++y)
+			now_node->cross_map[x - (now_node->size - 1 - y)][y] += _new[i++];
 
 	}
-	for (int x = 1; x < size ; ++x)
+	for (int x = 1; x < now_node->size ; ++x)
 	{
 		vector<int> tmp;
-		for (int y = 0; y <= size - 1 - x; ++y)
-			tmp.push_back(now_map[x+y][y]);
+		for (int y = 0; y <= now_node->size - 1 - x; ++y)
+			tmp.push_back(now_node->map_in_node[x+y][y]);
 
-		_new = check(tmp, who_going);
+		_new = check(tmp, now_node);
 		i = 0;
-		for (int y = 0; y <= size - 1 - x; ++y)
-			cross_map[x+y][y] += _new[i++];
+		for (int y = 0; y <= now_node->size - 1 - x; ++y)
+			now_node->cross_map[x+y][y] += _new[i++];
 
 	}
-	return cross_map;
 }
 
 
-vector< vector<int> >	row(vector< vector<int> > now_map, int size, int who_going, vector< vector<int> > cross_map){
+void	row(node *now_node){
 	vector<int>  _new;
 	int i;
-	for (int x = 0; x < size ; ++x)
+	for (int x = 0; x < now_node->size ; ++x)
 	{
 		vector<int> tmp;
-		for (int y = 0; y < size ; ++y)
-			tmp.push_back(now_map[x][y]);
-		_new = check(tmp, who_going);
+		for (int y = 0; y < now_node->size ; ++y)
+			tmp.push_back(now_node->map_in_node[x][y]);
+		_new = check(tmp, now_node);
 		i = 0;
-		for (int y = 0; y < size ; ++y)
-			cross_map[x][y] += _new[i++];
+		for (int y = 0; y < now_node->size ; ++y)
+			now_node->cross_map[x][y] += _new[i++];
 
 	}
-	return cross_map;
-
 }
 
-vector< vector<int> >	column(vector< vector<int> > now_map, int size, int who_going, vector< vector<int> > cross_map){
+void	column(node *now_node){
 	vector<int>  _new;
 	int i;
-	for (int y = 0; y < size ; ++y)
+	for (int y = 0; y < now_node->size ; ++y)
 	{
 		vector<int> tmp;
-		for (int x = 0; x < size ; ++x)
-			tmp.push_back(now_map[x][y]);
-		_new = check(tmp, who_going);
+		for (int x = 0; x < now_node->size ; ++x)
+			tmp.push_back(now_node->map_in_node[x][y]);
+		_new = check(tmp, now_node);
 		i = 0;
-		for (int x = 0; x < size ; ++x)
-			cross_map[x][y] += _new[i++];
+		for (int x = 0; x < now_node->size ; ++x)
+			now_node->cross_map[x][y] += _new[i++];
 	}
-	return cross_map;
+	printf("num_2 = %d\n", now_node->nums_vector[1]);
 }
-
 
 
 int main()
 {	
-	vector< vector<int> > now_map;
-	vector< vector<int> > cross_map;
-	int size;
-	now_map = read_from_file();
-	cross_map = now_map;
-	size = now_map.size();
-	for (int x = 0; x < size; ++x)
-		for (int y = 0; y < size; ++y)
-			cross_map[x][y] = 0;
+	vector<int>  tmp(5);
+	node *first_node = new node;
+	first_node->nums_vector = tmp;
+	first_node->map_in_node = read_from_file();
+	first_node->size = first_node->map_in_node.size();
+	first_node->who_going = 1;
+	first_node->cross_map = first_node->map_in_node;
+	for (int x = 0; x < first_node->size; ++x)
+		for (int y = 0; y < first_node->size; ++y)
+			first_node->cross_map[x][y] = 0;
 
-	printf("\n");
-	_print(now_map);
-	cross_map = column(now_map, size, 1, cross_map);
-	cross_map = row(now_map, size, 1, cross_map);
-	cross_map = diagonal_right_up(now_map, size, 1, cross_map);
-	cross_map = diagonal_left_up(now_map, size, 1, cross_map);
+	column(first_node);
+	// printf("\n");
+	_print(first_node->map_in_node);
+	// cross_map = column(now_node->map_in_node, size, 1, cross_map);
+	// // cross_map = row(now_node->map_in_node, size, 1, cross_map);
+	// // cross_map = diagonal_right_up(now_node->map_in_node, size, 1, cross_map);
+	// // cross_map = diagonal_left_up(now_node->map_in_node, size, 1, cross_map);
 
-	printf("\n");
-	_print(cross_map);
+	// printf("\n");
+	// _print(cross_map);
 
-	// Tree* 	p = new Tree(now_map, 3, 5);
+	// Tree* 	p = new Tree();
 	// (*p).return_last_dep();
-	// node *first_node = new node;	
+	// node *first_node = new node;
 	// tmp_node->who_going = 1;
-	// // tmp_node->nodes.push_back(new node);
+	// tmp_node->nodes.push_back(new node);
 	// printf("%d\n", tmp_node->who_going);
 	// printf("%lu\n", tmp_node->nodes.size());
 	// // tmp_node->nodes[0]->who_going = 2;
@@ -135,6 +151,7 @@ int main()
 
 	return 0;
 }
+
 
 vector<vector<int> > 	read_from_file()
 {
@@ -182,13 +199,13 @@ void 	_print(	vector<vector<int> > the_vector){
 	
 }
 
-vector<int>	check(vector<int>  tmp, int who_going){
+vector<int>	check(vector<int>  tmp, node *now_node){
 	int num = 0;
 	int left_i = -1;
 	vector<int>  _new(tmp.size());
 
 	for (int i = 0; i < tmp.size(); ++i){
-		if (tmp[i] == who_going)
+		if (tmp[i] == now_node->who_going)
 		{
 			if (i > 0 and tmp[i-1] == 0)
 				left_i = i-1;
@@ -198,6 +215,8 @@ vector<int>	check(vector<int>  tmp, int who_going){
 		{
 			if(num)
 			{
+				if (num <= 5)
+					now_node->nums_vector[num - 1] += 1;
 				if (tmp[i] == 0)
 					_new[i] += num;
 				if (left_i != -1)
@@ -208,8 +227,12 @@ vector<int>	check(vector<int>  tmp, int who_going){
 		}
 	}
 
-	if(num and left_i != -1)
+	if(num and left_i != -1){
+		if (num <= 5)
+			now_node->nums_vector[num - 1] += 1;
 		_new[left_i] += num;
+	}
+	printf("[[[num_2 = %d\n", now_node->nums_vector[1]);
 
 	return _new;
 }
