@@ -12,7 +12,9 @@ using namespace std;
 typedef struct			node
 {
 	vector<vector<int> >	map_in_node;
-	int 					who_going;	
+	vector<vector<int> >	cross_map;
+	int 					who_going;
+	int 					level_depth;
 	vector<struct node* >	nodes;
 }	node;
 
@@ -20,14 +22,21 @@ typedef struct			node
 class Tree
 {
 public:
-	Tree(vector<vector<int> > start_map, int latitude, int depth);
-	void	return_last_dep(void);
+	Tree();
+	void			 	read_from_file();
+	void			 	_print(vector<vector<int> > the_vector);
+	void			 	_prepare_map(vector<vector<int> > the_vector);
+// vector< vector<int> >	diagonal_left_up(vector< vector<int> > now_map, vector< vector<int> > cross_map, int who_going);
+// vector< vector<int> >	diagonal_right_up(vector< vector<int> > now_map, vector< vector<int> > cross_map, int who_going);
+vector< vector<int> >	column(vector< vector<int> > now_map, vector< vector<int> > cross_map, int who_going);
+vector< vector<int> >	row(vector< vector<int> > now_map, vector< vector<int> > cross_map, int who_going);
+
 	~Tree(void);
+
 private:
-	int						latitude;
-	int						depth;
 	vector<vector<int> >	start_map;
 	node					*first_node;
+	int 					size_map;
 };
 
 #endif
