@@ -26,6 +26,7 @@ typedef struct			node
 	vector<vector<int> >	cross_map;
 	vector<vector<int> >	cross_map_not_you;
 	vector<all_variants>	variants;
+	bool					have_heuristics;
 	int 					heuristics;
 	int 					now_player;
 	int 					other_player;
@@ -92,7 +93,7 @@ node *	create_node(node *parent, int x, int y){
 	child->other_player = parent->now_player;
 	child->cross_map = child->map_in_node;
 	child->level_depth = parent->level_depth + 1;
-	
+	child->have_heuristics = false;
 	for (int x = 0; x < child->size; ++x)
 		for (int y = 0; y < child->size; ++y)
 			child->cross_map[x][y] = 0;
@@ -109,7 +110,7 @@ void	init_first_node(node *first_node, int START_PLAYER, int OTHER_PLAYER){
 	first_node->level_depth = 0;
 	first_node->now_player = START_PLAYER;
 	first_node->other_player = OTHER_PLAYER;
-
+	first_node->have_heuristics = false;
 	first_node->cross_map = first_node->map_in_node;
 	for (int x = 0; x < first_node->size; ++x)
 		for (int y = 0; y < first_node->size; ++y)
@@ -122,11 +123,13 @@ void	init_first_node(node *first_node, int START_PLAYER, int OTHER_PLAYER){
 void			return_heuristic(node *child, int START_PLAYER){
 	numS 	*how_many_nums;
 	int 	sum = 0;
+	printf("return_heuristic1\n");
 	how_many_nums->num_1 = 0;
 	how_many_nums->num_2 = 0;
 	how_many_nums->num_3 = 0;
 	how_many_nums->num_4 = 0;
 	how_many_nums->num_5 = 0;
+	printf("return_heuristic\n");
 	iterate_all_variants(child, how_many_nums);
 
 	// printf("num_1: %d\n", how_many_nums->num_1);
@@ -144,11 +147,15 @@ void			return_heuristic(node *child, int START_PLAYER){
 	if (child->now_player == START_PLAYER)
 		sum = -sum;
 	printf("%d\n", sum);
+	child->have_heuristics = true;
 	child->heuristics = sum;
 }
 void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
+	printf("make_childs\n");
 	if (parent->level_depth == MAX_DEPTH){
+		printf("sdglakfgl\n");
 		return_heuristic(parent, START_PLAYER);
+		printf("ljnnlnnl\n");
 		return;
 	}
 	node *child_tmp;
@@ -167,11 +174,34 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 		if (width > 0 and checkRules(parent->variants[i]._x, parent->variants[i]._y, parent->now_player)){
 			child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
 			width--;
-			// printf("\ndep = %d   %d x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i].num, parent->variants[i]._x, parent->variants[i]._y);
+			printf("\ndep = %d   %d x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i].num, parent->variants[i]._x, parent->variants[i]._y);
 			// _print(child_tmp->map_in_node);
-			make_childs(child_tmp, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
 		}
 	}
+	for (int i = 0; i < parent->nodes.size(); ++i){
+		child_tmp = parent->nodes[i];
+		make_childs(child_tmp, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
+	}
+	printf("%d\n", 11111111);
+	bool maximaze = false;
+	int limit = parent->nodes[0]->heuristics;
+	int limit_tmp;
+	if (parent->now_player == START_PLAYER)
+		maximaze = true;
+	
+	for (int i = 0; i < parent->nodes.size(); ++i){
+		child_tmp = parent->nodes[i];
+		// check have we heuristics
+		limit_tmp = parent->nodes[i]->heuristics;
+		if (maximaze)
+			if (limit_tmp > limit)
+				limit = limit_tmp;
+		else
+			if (limit_tmp < limit)
+				limit = limit_tmp;
+	}
+	parent->have_heuristics = true;
+	parent->heuristics = limit;
 }
 
 
@@ -186,8 +216,9 @@ int main()
 
 	init_first_node(first_node, START_PLAYER, OTHER_PLAYER);
 	_print(first_node->map_in_node);
+	printf("heuristics = 	%d\n", first_node->heuristics);
 	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
-
+	printf("%d\n", first_node->heuristics);
 	return 0;
 }
 
