@@ -26,12 +26,14 @@ typedef struct			node
 	vector<vector<int> >	cross_map;
 	vector<vector<int> >	cross_map_not_you;
 	vector<all_variants>	variants;
-	bool					have_heuristics;
-	int 					heuristics;
+	bool					win;
+	size_t 					heuristics;
 	int 					now_player;
 	int 					other_player;
 	int 					level_depth;
 	int 					size;
+	int						x;
+	int						y;
 	struct node*			parent;
 	vector<struct node* >	nodes;
 }	node;
@@ -51,8 +53,8 @@ void					diagonal_left_up(node *nde, bool you);
 void					diagonal_right_up(node *nde, bool you);
 void					row(node *nde, bool you);
 void					column(node *nde, bool you);
-void 					checkH(vector<int>  tmp, int now_player, numS *how_many_nums);
-void					iterate_all_variants(node *nde, numS *how_many_nums);
+void 					checkH(vector<int>  tmp, int now_player, vector<int> &how_many_nums);
+void					iterate_all_variants(node *nde, vector<int> &how_many_nums);
 
 void	most_best_variant(node *nde){
 	int tmp_map, tmp_map_not_you, for_tmp;
@@ -88,12 +90,14 @@ node *	create_node(node *parent, int x, int y){
 	
 	child->map_in_node = parent->map_in_node;
 	child->map_in_node[x][y] = parent->now_player;
+	child->x = x;
+	child->y = y;
 	child->size = child->map_in_node.size();
 	child->now_player = parent->other_player;
 	child->other_player = parent->now_player;
 	child->cross_map = child->map_in_node;
 	child->level_depth = parent->level_depth + 1;
-	child->have_heuristics = false;
+	child->win = false;
 	for (int x = 0; x < child->size; ++x)
 		for (int y = 0; y < child->size; ++y)
 			child->cross_map[x][y] = 0;
@@ -108,9 +112,11 @@ void	init_first_node(node *first_node, int START_PLAYER, int OTHER_PLAYER){
 	first_node->map_in_node = read_from_file();
 	first_node->size = first_node->map_in_node.size();
 	first_node->level_depth = 0;
+	first_node->x = 0;
+	first_node->y = 0;
 	first_node->now_player = START_PLAYER;
 	first_node->other_player = OTHER_PLAYER;
-	first_node->have_heuristics = false;
+	first_node->win = false;
 	first_node->cross_map = first_node->map_in_node;
 	for (int x = 0; x < first_node->size; ++x)
 		for (int y = 0; y < first_node->size; ++y)
@@ -119,45 +125,26 @@ void	init_first_node(node *first_node, int START_PLAYER, int OTHER_PLAYER){
 	
 }
 
-
 void			return_heuristic(node *child, int START_PLAYER){
-	numS 	*how_many_nums;
-	int 	sum = 0;
-	printf("return_heuristic1\n");
-	how_many_nums->num_1 = 0;
-	how_many_nums->num_2 = 0;
-	how_many_nums->num_3 = 0;
-	how_many_nums->num_4 = 0;
-	how_many_nums->num_5 = 0;
-	printf("return_heuristic\n");
+
+	size_t 	sum = 0;
+	vector<int> how_many_nums(5);
 	iterate_all_variants(child, how_many_nums);
 
-	// printf("num_1: %d\n", how_many_nums->num_1);
-	// printf("num_2: %d\n", how_many_nums->num_2);
-	// printf("num_3: %d\n", how_many_nums->num_3);
-	// printf("num_4: %d\n", how_many_nums->num_4);
-	// printf("num_5: %d\n", how_many_nums->num_5);
-	sum = how_many_nums->num_1 + how_many_nums->num_2 * 30 + 
-	how_many_nums->num_3*300 + how_many_nums->num_4*10000 + 
-	how_many_nums->num_5*100000;
-	if (sum < 0)
-		sum = -sum;//correct
-	if (how_many_nums->num_5 != 0)
-		sum = 2147483333;
-	if (child->now_player == START_PLAYER)
-		sum = -sum;
-	printf("%d\n", sum);
-	child->have_heuristics = true;
+	sum = how_many_nums[0] + how_many_nums[1] * 30 + 
+	how_many_nums[2]*300 + how_many_nums[3]*10000 + 
+	how_many_nums[4]*100000;
+	if (how_many_nums[4] != 0)
+		child->win = true;
 	child->heuristics = sum;
 }
 void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
-	printf("make_childs\n");
 	if (parent->level_depth == MAX_DEPTH){
-		printf("sdglakfgl\n");
 		return_heuristic(parent, START_PLAYER);
-		printf("ljnnlnnl\n");
+		printf("return_heuristic\n");
 		return;
 	}
+	printf("make_childs\n");
 	node *child_tmp;
 	int width = MAX_WIDTH;
 	row(parent, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
@@ -169,7 +156,8 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	diagonal_left_up(parent, false);
 	diagonal_left_up(parent, true);
 	most_best_variant(parent);
-	// _print(parent->cross_map);
+	// _print(parent->map_in_node);
+	// printf("0 [%d, %d]  1 [%d, %d]\n", parent->variants[0]._x, parent->variants[0]._y, parent->variants[1]._x, parent->variants[1]._y);
 	for (int i = 0; i < parent->variants.size(); ++i){
 		if (width > 0 and checkRules(parent->variants[i]._x, parent->variants[i]._y, parent->now_player)){
 			child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
@@ -179,10 +167,13 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 		}
 	}
 	for (int i = 0; i < parent->nodes.size(); ++i){
-		child_tmp = parent->nodes[i];
-		make_childs(child_tmp, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
+		_print(parent->nodes[i]->map_in_node);
 	}
-	printf("%d\n", 11111111);
+	
+	for (int i = 0; i < parent->nodes.size(); ++i){
+		make_childs(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, START_PLAYER);
+	}
+	// printf("%d\n", 11111111);
 	bool maximaze = false;
 	int limit = parent->nodes[0]->heuristics;
 	int limit_tmp;
@@ -200,14 +191,12 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 			if (limit_tmp < limit)
 				limit = limit_tmp;
 	}
-	parent->have_heuristics = true;
 	parent->heuristics = limit;
 }
 
-
 int main()
 {
-	int MAX_DEPTH = 3;
+	int MAX_DEPTH = 2;
 	int MAX_WIDTH = 2;
 	int START_PLAYER = 1;// AI player
 	int OTHER_PLAYER = 2;
@@ -216,14 +205,49 @@ int main()
 
 	init_first_node(first_node, START_PLAYER, OTHER_PLAYER);
 	_print(first_node->map_in_node);
-	printf("heuristics = 	%d\n", first_node->heuristics);
+	// printf("----]%d\n", first_node->heuristics);
+	// return_heuristic(first_node, START_PLAYER);
+	// printf("----]%d\n", first_node->heuristics);
 	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
-	printf("%d\n", first_node->heuristics);
+	// printf("%d\n", first_node->nodes.size());
+	return 0;
+	for (int i = 0; i < first_node->nodes.size(); ++i)
+	{
+		printf("\n%d: 	x = %d %d = y", i, first_node->nodes[i]->x, first_node->nodes[i]->y);
+		_print(first_node->nodes[i]->map_in_node);
+		tmp_node = first_node->nodes[i];
+		for (int j = 0; j < tmp_node->nodes.size(); ++j){
+			printf("\ni%d j%d: 	x = %d %d = y 	%lu heur:%lu",i, j, tmp_node->nodes[i]->x, tmp_node->nodes[i]->y, tmp_node->nodes[i]->nodes.size(), tmp_node->nodes[i]->heuristics);
+			_print(tmp_node->nodes[i]->map_in_node);
+
+		}
+	}
+	printf("%lu\n", first_node->heuristics);
 	return 0;
 }
 
 
-void 	checkH(vector<int>  tmp, int now_player, numS *how_many_nums){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void 	checkH(vector<int>  tmp, int now_player, vector<int> &how_many_nums){
 	int num = 0;
 	int left_i = -1;
 	for (int i = 0; i < tmp.size(); ++i){
@@ -235,34 +259,15 @@ void 	checkH(vector<int>  tmp, int now_player, numS *how_many_nums){
 		else
 		{
 			if(num and (tmp[i] == 0 or left_i != -1))
-			{
-				if (num == 1)
-					how_many_nums->num_1 += 1;
-				else if (num == 2)
-					how_many_nums->num_2 += 1;
-				else if (num == 3)
-					how_many_nums->num_3 += 1;
-				else if (num == 4)
-					how_many_nums->num_4 += 1;
-				else if (num == 5)
-					how_many_nums->num_5 += 1;
-			}
+				how_many_nums[num - 1] += 1;
 			left_i = -1;
 			num = 0;
 		}
 	}
 
 	if(num and left_i != -1)
-		if (num == 1)
-			how_many_nums->num_1 += 1;
-		else if (num == 2)
-			how_many_nums->num_2 += 1;
-		else if (num == 3)
-			how_many_nums->num_3 += 1;
-		else if (num == 4)
-			how_many_nums->num_4 += 1;
-		else if (num == 5)
-			how_many_nums->num_5 += 1;
+		how_many_nums[num - 1] += 1;
+
 }
 
 vector<vector<int> > 	read_from_file()
@@ -384,7 +389,7 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 	// // tmp_node->nodes[0]->now_player = 2;
 	// // printf("%d\n", tmp_node->nodes[0]->now_player);
 
-void	iterate_all_variants(node *nde, numS *how_many_nums){
+void	iterate_all_variants(node *nde, vector<int> &how_many_nums){
 
 	// column
 	for (int y = 0; y < nde->size ; ++y)
