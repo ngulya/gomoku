@@ -114,23 +114,6 @@ node *	create_node(node *parent, int x, int y){
 	return child;
 }
 
-void	init_first_node(node *first_node, int START_PLAYER, int OTHER_PLAYER){
-	first_node->parent = nullptr;
-	first_node->map_in_node = read_from_file();
-	first_node->size = first_node->map_in_node.size();
-	first_node->level_depth = 0;
-	first_node->x = 0;
-	first_node->y = 0;
-	first_node->now_player = START_PLAYER;
-	first_node->other_player = OTHER_PLAYER;
-	first_node->win = false;
-	first_node->cross_map = first_node->map_in_node;
-	for (int x = 0; x < first_node->size; ++x)
-		for (int y = 0; y < first_node->size; ++y)
-			first_node->cross_map[x][y] = 0;
-	first_node->cross_map_not_you = first_node->cross_map;
-	
-}
 
 void			return_heuristic(node *child, int START_PLAYER){
 
@@ -148,10 +131,10 @@ void			return_heuristic(node *child, int START_PLAYER){
 void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	if (parent->level_depth == MAX_DEPTH){
 		return_heuristic(parent, START_PLAYER);
-		printf("return_heuristic %lu\n", parent->heuristics);
+		// printf("return_heuristic %lu\n", parent->heuristics);
 		return;
 	}
-	printf("make_childs\n");
+	// printf("make_childs\n");
 	node *child_tmp;
 	int width = MAX_WIDTH;
 	row(parent, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
@@ -168,15 +151,15 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 		if (width > 0 and checkRules(parent->variants[i]._x, parent->variants[i]._y, parent->now_player)){
 			child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
 			width--;
-			printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
+			// printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
 			// _print(child_tmp->map_in_node);
 		}
 	}
 	
 	for (int i = 0; i < parent->nodes.size(); ++i){
-		printf("child num %d create child-child\n", i);
+		// printf("child num %d create child-child\n", i);
 		// printf("in parent childe num %d\n", i);
-		_print(parent->nodes[i]->map_in_node);
+		// _print(parent->nodes[i]->map_in_node);
 		make_childs(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, START_PLAYER);
 	}
 
@@ -189,7 +172,7 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 
 	if (parent->now_player == START_PLAYER)
 		maximaze = false;
-	printf("find maxH\n");
+	// printf("find maxH\n");
 	for (int i = 0; i < parent->nodes.size(); ++i){
 		// check have we heuristics
 		limit_tmp = parent->nodes[i]->heuristics;
@@ -210,7 +193,7 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 			}
 		}
 	}
-	printf("limit %d %d %d\n", limit, x, y);
+	// printf("limit %d %d %d\n", limit, x, y);
 	parent->heuristics = limit;
 	if (parent->level_depth == 0){
 		parent->x = x;
@@ -218,35 +201,36 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	}
 }
 
-int main()
-{
+void	_find_MF(){
 	int MAX_DEPTH = 2;
 	int MAX_WIDTH = 2;
 	int START_PLAYER = 1;// AI player
 	int OTHER_PLAYER = 2;
-	node *tmp_node;
-	node *first_node = new node;//create template width**depth
-	init_first_node(first_node, START_PLAYER, OTHER_PLAYER);
-	_print(first_node->map_in_node);
+	node *first_node = new node;
 
+	first_node->parent = nullptr;
+	first_node->map_in_node = read_from_file();
+	first_node->size = first_node->map_in_node.size();
+	first_node->level_depth = 0;
+	first_node->x = 0;
+	first_node->y = 0;
+	first_node->now_player = START_PLAYER;
+	first_node->other_player = OTHER_PLAYER;
+	first_node->win = false;
+	first_node->cross_map = first_node->map_in_node;
+	for (int x = 0; x < first_node->size; ++x)
+		for (int y = 0; y < first_node->size; ++y)
+			first_node->cross_map[x][y] = 0;
+	first_node->cross_map_not_you = first_node->cross_map;
 	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
-	printf("_________\n");
 	printf("%lu\n", first_node->heuristics);
 	printf("x:%d y:%d\n", first_node->x, first_node->y);
 	
-	return 0;
-	for (int i = 0; i < first_node->nodes.size(); ++i)
-	{
-		printf("\nfrstnodechild %d: 	x = %d %d = y", i, first_node->nodes[i]->x, first_node->nodes[i]->y);
-		_print(first_node->nodes[i]->map_in_node);
-		tmp_node = first_node->nodes[i];
-		for (int j = 0; j < tmp_node->nodes.size(); ++j){
-			printf("\ni%d j%d: 	x = %d %d = y 	%lu heur:%lu",i, j, tmp_node->nodes[j]->x, tmp_node->nodes[j]->y, tmp_node->nodes[j]->nodes.size(), tmp_node->nodes[j]->heuristics);
-			_print(tmp_node->nodes[j]->map_in_node);
+}
 
-		}
-	}
-	printf("%lu\n", first_node->heuristics);
+int main()
+{
+	_find_MF();
 	return 0;
 }
 
