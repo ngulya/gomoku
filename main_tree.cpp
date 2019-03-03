@@ -1,5 +1,5 @@
 // #include "class_tree.hpp"
-#include <bits/stdc++.h> 
+// #include <bits/stdc++.h> 
 # include <iostream>
 # include <vector>
 # include <iostream>
@@ -58,10 +58,12 @@ void					iterate_all_variants(node *nde, vector<int> &how_many_nums);
 
 void	most_best_variant(node *nde){
 	int tmp_map, tmp_map_not_you, for_tmp;
+	all_variants  tmpvar;
 	for (int x = 0; x < nde->size; ++x)
 		for (int y = 0; y < nde->size; ++y){
 			tmp_map_not_you = nde->cross_map_not_you[x][y];
 			tmp_map = nde->cross_map[x][y];
+			// printf("%d %d\n",tmp_map, tmp_map_not_you );
 			if (tmp_map != 0){
 				for_tmp = 1;
 				while(tmp_map-- > 1)
@@ -74,10 +76,15 @@ void	most_best_variant(node *nde){
 					for_tmp *= 10;
 				tmp_map_not_you = for_tmp;
 			}
-			if ((tmp_map + tmp_map_not_you) > 0)
-				nde->variants.push_back({tmp_map + tmp_map_not_you, x, y});
+			if ((tmp_map + tmp_map_not_you) > 0){
+				tmpvar.num = tmp_map + tmp_map_not_you;
+				tmpvar._x = x;
+				tmpvar._y = y;
+				nde->variants.push_back(tmpvar);
+			}		
 			nde->cross_map[x][y] = tmp_map + tmp_map_not_you;
 		}
+			
 	sort(nde->variants.begin(), nde->variants.end(), compare_variants);
 }
 
@@ -133,7 +140,7 @@ void			return_heuristic(node *child, int START_PLAYER){
 
 	sum = how_many_nums[0] + how_many_nums[1] * 30 + 
 	how_many_nums[2]*300 + how_many_nums[3]*10000 + 
-	how_many_nums[4]*100000;
+	how_many_nums[4]*10000000;
 	if (how_many_nums[4] != 0)
 		child->win = true;
 	child->heuristics = sum;
@@ -141,7 +148,7 @@ void			return_heuristic(node *child, int START_PLAYER){
 void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	if (parent->level_depth == MAX_DEPTH){
 		return_heuristic(parent, START_PLAYER);
-		printf("return_heuristic\n");
+		printf("return_heuristic %lu\n", parent->heuristics);
 		return;
 	}
 	printf("make_childs\n");
@@ -156,42 +163,59 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	diagonal_left_up(parent, false);
 	diagonal_left_up(parent, true);
 	most_best_variant(parent);
-	// _print(parent->map_in_node);
-	// printf("0 [%d, %d]  1 [%d, %d]\n", parent->variants[0]._x, parent->variants[0]._y, parent->variants[1]._x, parent->variants[1]._y);
+
 	for (int i = 0; i < parent->variants.size(); ++i){
 		if (width > 0 and checkRules(parent->variants[i]._x, parent->variants[i]._y, parent->now_player)){
 			child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
 			width--;
-			printf("\ndep = %d   %d x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i].num, parent->variants[i]._x, parent->variants[i]._y);
+			printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
 			// _print(child_tmp->map_in_node);
 		}
 	}
-	for (int i = 0; i < parent->nodes.size(); ++i){
-		_print(parent->nodes[i]->map_in_node);
-	}
 	
 	for (int i = 0; i < parent->nodes.size(); ++i){
+		printf("child num %d create child-child\n", i);
+		// printf("in parent childe num %d\n", i);
+		_print(parent->nodes[i]->map_in_node);
 		make_childs(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, START_PLAYER);
 	}
-	// printf("%d\n", 11111111);
-	bool maximaze = false;
+
+	bool maximaze = true;
+	int limit_tmp, tmpx, tmpy;
 	int limit = parent->nodes[0]->heuristics;
-	int limit_tmp;
+	int x = parent->nodes[0]->x;
+	int y = parent->nodes[0]->y;
+
+
 	if (parent->now_player == START_PLAYER)
-		maximaze = true;
-	
+		maximaze = false;
+	printf("find maxH\n");
 	for (int i = 0; i < parent->nodes.size(); ++i){
-		child_tmp = parent->nodes[i];
 		// check have we heuristics
 		limit_tmp = parent->nodes[i]->heuristics;
-		if (maximaze)
-			if (limit_tmp > limit)
+		tmpx = parent->nodes[i]->x;
+		tmpy = parent->nodes[i]->y;
+		if (maximaze){
+			if (limit_tmp > limit){
 				limit = limit_tmp;
-		else
-			if (limit_tmp < limit)
+				x = tmpx;
+				y = tmpy;
+			}
+		}
+		else{
+			if (limit_tmp < limit){
 				limit = limit_tmp;
+				x = tmpx;
+				y = tmpy;
+			}
+		}
 	}
+	printf("limit %d %d %d\n", limit, x, y);
 	parent->heuristics = limit;
+	if (parent->level_depth == 0){
+		parent->x = x;
+		parent->y = y;
+	}
 }
 
 int main()
@@ -202,23 +226,23 @@ int main()
 	int OTHER_PLAYER = 2;
 	node *tmp_node;
 	node *first_node = new node;//create template width**depth
-
 	init_first_node(first_node, START_PLAYER, OTHER_PLAYER);
 	_print(first_node->map_in_node);
-	// printf("----]%d\n", first_node->heuristics);
-	// return_heuristic(first_node, START_PLAYER);
-	// printf("----]%d\n", first_node->heuristics);
+
 	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
-	// printf("%d\n", first_node->nodes.size());
+	printf("_________\n");
+	printf("%lu\n", first_node->heuristics);
+	printf("x:%d y:%d\n", first_node->x, first_node->y);
+	
 	return 0;
 	for (int i = 0; i < first_node->nodes.size(); ++i)
 	{
-		printf("\n%d: 	x = %d %d = y", i, first_node->nodes[i]->x, first_node->nodes[i]->y);
+		printf("\nfrstnodechild %d: 	x = %d %d = y", i, first_node->nodes[i]->x, first_node->nodes[i]->y);
 		_print(first_node->nodes[i]->map_in_node);
 		tmp_node = first_node->nodes[i];
 		for (int j = 0; j < tmp_node->nodes.size(); ++j){
-			printf("\ni%d j%d: 	x = %d %d = y 	%lu heur:%lu",i, j, tmp_node->nodes[i]->x, tmp_node->nodes[i]->y, tmp_node->nodes[i]->nodes.size(), tmp_node->nodes[i]->heuristics);
-			_print(tmp_node->nodes[i]->map_in_node);
+			printf("\ni%d j%d: 	x = %d %d = y 	%lu heur:%lu",i, j, tmp_node->nodes[j]->x, tmp_node->nodes[j]->y, tmp_node->nodes[j]->nodes.size(), tmp_node->nodes[j]->heuristics);
+			_print(tmp_node->nodes[j]->map_in_node);
 
 		}
 	}
