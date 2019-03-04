@@ -1,5 +1,5 @@
 // #include "class_tree.hpp"
-// #include <bits/stdc++.h> 
+#include <bits/stdc++.h> 
 # include <iostream>
 # include <vector>
 # include <iostream>
@@ -210,6 +210,8 @@ void	_find_MF(){
 
 	first_node->parent = nullptr;
 	first_node->map_in_node = read_from_file();
+	_print(first_node->map_in_node);
+	printf("---\n");
 	first_node->size = first_node->map_in_node.size();
 	first_node->level_depth = 0;
 	first_node->x = 0;
@@ -225,6 +227,18 @@ void	_find_MF(){
 	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
 	printf("%lu\n", first_node->heuristics);
 	printf("x:%d y:%d\n", first_node->x, first_node->y);
+	///////////////
+	// row(first_node, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
+	// row(first_node, true);
+	// column(first_node, false);
+	// column(first_node, true);
+	// diagonal_right_up(first_node, false);
+	// diagonal_right_up(first_node, true);
+	// diagonal_left_up(first_node, false);
+	// diagonal_left_up(first_node, true);
+	// _print(first_node->cross_map);
+	// _print(first_node->cross_map_not_you);
+	///////////////
 	
 }
 
@@ -329,6 +343,12 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 	int num = 0;
 	int left_i = -1;
 	vector<int>  _new(tmp.size());
+	// printf("\nuold:\n");
+	// for (int i = 0; i < tmp.size(); ++i)
+	// {
+	// 	printf("%d ", tmp[i]);
+	// }
+	// printf("\n");
 
 	for (int i = 0; i < tmp.size(); ++i){
 		if (tmp[i] != 0 and tmp[i] != now_node->now_player)
@@ -341,15 +361,27 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 		{
 			if(num)
 			{
-				if (tmp[i] == 0)
+				if (tmp[i] == 0){
 					_new[i] = num > _new[i] ? num : _new[i];
-				if (left_i != -1)
+					if (i > 2 and left_i == -1 and num == 2)//need for -1 1 1 0, if we have flang not our
+						_new[i] = 3 > _new[i] ? 3 : _new[i];
+				}
+				if (left_i != -1){
 					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
+					if (tmp[i] != 0 and tmp[i] == now_node->now_player and num == 2)//need for 0 1 1 -1, if we have flang not our
+						_new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
+				}
 			}
 			left_i = -1;
 			num = 0;
 		}
 	}
+	// printf("new:\n");
+	// for (int i = 0; i < _new.size(); ++i)
+	// {
+	// 	printf("%d ", _new[i]);
+	// }
+	// printf("----\n");
 
 	if(num and left_i != -1)
 		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
@@ -361,6 +393,12 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 	int left_i = -1;
 	vector<int>  _new(tmp.size());
 
+	// printf("\nuold:\n");
+	// for (int i = 0; i < tmp.size(); ++i)
+	// {
+	// 	printf("%d ", tmp[i]);
+	// }
+	// printf("\n");
 	for (int i = 0; i < tmp.size(); ++i){
 		if (tmp[i] == now_node->now_player)
 		{
@@ -372,10 +410,16 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 		{
 			if(num)
 			{
-				if (tmp[i] == 0)
+				if (tmp[i] == 0){
 					_new[i] = num > _new[i] ? num : _new[i];
-				if (left_i != -1)
+					if (i > 2 and left_i == -1 and num == 2)//need for -1 1 1 0, if we have flang not our
+						_new[i] = 3 > _new[i] ? 3 : _new[i];
+				}
+				if (left_i != -1){
 					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
+					if (tmp[i] != 0 and tmp[i] != now_node->now_player and num == 2)
+						_new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
+				}
 			}
 			left_i = -1;
 			num = 0;
@@ -384,6 +428,13 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 
 	if(num and left_i != -1)
 		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
+	// printf("new:\n");
+	// for (int i = 0; i < _new.size(); ++i)
+	// {
+	// 	printf("%d ", _new[i]);
+	// }
+	// printf("----\n");
+	
 	return _new;
 }
 
