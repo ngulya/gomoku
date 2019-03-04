@@ -93,13 +93,54 @@ bool	checkRules(int x, int y, int player){
 }
 
 node *	create_node(node *parent, int x, int y){
-	node *child = new node;//create template width**depth
-	
+	node *child = new node;//create template width**depth 
 	child->map_in_node = parent->map_in_node;
 	child->map_in_node[x][y] = parent->now_player;
+	child->size = child->map_in_node.size();
 	child->x = x;
 	child->y = y;
-	child->size = child->map_in_node.size();
+
+	if (y > 2 and child->map_in_node[x][y - 1] != 0 and child->map_in_node[x][y - 1] == child->map_in_node[x][y - 2] and child->map_in_node[x][y - 2] != parent->now_player and child->map_in_node[x][y - 3] == parent->now_player){
+		child->map_in_node[x][y-1] = 0;
+		child->map_in_node[x][y-2] = 0;
+	}//left
+	if (y < (child->size - 3) and child->map_in_node[x][y + 1] != 0 and child->map_in_node[x][y + 1] == child->map_in_node[x][y + 2] and child->map_in_node[x][y + 2] != parent->now_player and child->map_in_node[x][y + 3] == parent->now_player){
+		child->map_in_node[x][y+1] = 0;
+		child->map_in_node[x][y+2] = 0;
+	}//right
+	if (x > 2 and child->map_in_node[x-1][y] != 0 and child->map_in_node[x-1][y] == child->map_in_node[x-2][y] and child->map_in_node[x-2][y] != parent->now_player and child->map_in_node[x-3][y] == parent->now_player){
+		child->map_in_node[x-1][y] = 0;
+		child->map_in_node[x-2][y] = 0;
+	}//up
+	if (x < (child->size - 3) and child->map_in_node[x+1][y] != 0 and child->map_in_node[x+1][y] == child->map_in_node[x+2][y] and child->map_in_node[x+2][y] != parent->now_player and child->map_in_node[x+3][y] == parent->now_player){
+		child->map_in_node[x+1][y] = 0;
+		child->map_in_node[x+2][y] = 0;
+	}//right
+
+	if (x > 2 and y > 2 and child->map_in_node[x-1][y-1] != 0 and child->map_in_node[x-1][y-1] == child->map_in_node[x-2][y-2] and child->map_in_node[x-2][y-2] != parent->now_player and child->map_in_node[x-3][y-3] == parent->now_player){
+		child->map_in_node[x-1][y-1] = 0;
+		child->map_in_node[x-2][y-2] = 0;
+	}//left_up
+	
+
+	if (x < (child->size - 3) and y < (child->size - 3) and child->map_in_node[x+1][y+1] != 0 and child->map_in_node[x+1][y+1] == child->map_in_node[x+2][y+2] and child->map_in_node[x+2][y+2] != parent->now_player and child->map_in_node[x+3][y+3] == parent->now_player){
+		child->map_in_node[x+1][y+1] = 0;
+		child->map_in_node[x+2][y+2] = 0;
+	}//right down
+
+
+	if (x > 2 and y < (child->size - 3) and child->map_in_node[x-1][y+1] != 0 and child->map_in_node[x-1][y+1] == child->map_in_node[x-2][y+2] and child->map_in_node[x-2][y+2] != parent->now_player and child->map_in_node[x-3][y+3] == parent->now_player){
+		child->map_in_node[x-1][y+1] = 0;
+		child->map_in_node[x-2][y+2] = 0;
+	}//right_up
+	
+
+	if (y > 2 and x < (child->size - 3) and child->map_in_node[x+1][y-1] != 0 and child->map_in_node[x+1][y-1] == child->map_in_node[x+2][y-2] and child->map_in_node[x+2][y-2] != parent->now_player and child->map_in_node[x+3][y-3] == parent->now_player){
+		child->map_in_node[x+1][y-1] = 0;
+		child->map_in_node[x+2][y-2] = 0;
+	}//left down
+	
+
 	child->now_player = parent->other_player;
 	child->other_player = parent->now_player;
 	child->cross_map = child->map_in_node;
@@ -147,6 +188,12 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	diagonal_left_up(parent, true);
 	most_best_variant(parent);
 
+	// // int xxx = 1;
+	// // int yyy = 4;
+	// // printf("x=%d y=%d\n", xxx, yyy);
+	// // child_tmp = create_node(parent, xxx, yyy);
+	// // _print(child_tmp->map_in_node);
+	// // exit(1);
 	for (int i = 0; i < parent->variants.size(); ++i){
 		if (width > 0 and checkRules(parent->variants[i]._x, parent->variants[i]._y, parent->now_player)){
 			child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
@@ -155,7 +202,6 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 			// _print(child_tmp->map_in_node);
 		}
 	}
-	
 	for (int i = 0; i < parent->nodes.size(); ++i){
 		// printf("child num %d create child-child\n", i);
 		// printf("in parent childe num %d\n", i);
@@ -211,7 +257,7 @@ void	_find_MF(){
 	first_node->parent = nullptr;
 	first_node->map_in_node = read_from_file();
 	_print(first_node->map_in_node);
-	printf("---\n");
+	// printf("---\n");
 	first_node->size = first_node->map_in_node.size();
 	first_node->level_depth = 0;
 	first_node->x = 0;
