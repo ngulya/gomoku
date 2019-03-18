@@ -9,7 +9,8 @@
 using namespace std;
 
 struct all_variants { 
-	int num, _x, _y; 
+	size_t num;
+	int  _x, _y; 
 };
 
 struct numS { 
@@ -63,12 +64,12 @@ void	most_best_variant(node *nde){
 		for (int y = 0; y < nde->size; ++y){
 			tmp_map_not_you = nde->cross_map_not_you[x][y];
 			tmp_map = nde->cross_map[x][y];
-			// printf("%d %d\n",tmp_map, tmp_map_not_you );
+			// printf("x:%d y:%d %d %d\n",x, y,tmp_map, tmp_map_not_you );
 			if (tmp_map != 0){
 				for_tmp = 1;
 				while(tmp_map-- > 1)
 					for_tmp *= 10;
-				tmp_map = for_tmp;
+				tmp_map = for_tmp + 1;
 			}
 			if (tmp_map_not_you != 0){
 				for_tmp = 1;
@@ -91,6 +92,8 @@ void	most_best_variant(node *nde){
 bool	checkRules(int x, int y, int player){
 	return true;
 }
+
+
 
 node *	create_node(node *parent, int x, int y){
 	node *child = new node;//create template width**depth 
@@ -156,6 +159,7 @@ node *	create_node(node *parent, int x, int y){
 }
 
 
+
 void			return_heuristic(node *child, int START_PLAYER){
 
 	size_t 	sum = 0;
@@ -168,14 +172,28 @@ void			return_heuristic(node *child, int START_PLAYER){
 	if (how_many_nums[4] != 0)
 		child->win = true;
 	child->heuristics = sum;
+	// printf("SUM:%lu\n", sum);
 }
+
+int this_win_finally(int x,int y, int START_PLAYER, int *_x_cap , int *_y_cap){
+	
+	return 0;
+	if (x == 4 and y == 2 and START_PLAYER == 1){
+		(*_x_cap) = 4;
+		(*_y_cap) = 1;
+		return 2;
+	}
+	return 0;
+}
+
+
 void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	if (parent->level_depth == MAX_DEPTH){
 		return_heuristic(parent, START_PLAYER);
-		// printf("return_heuristic %lu\n", parent->heuristics);
+		printf("return_heuristic %lu\n", parent->heuristics);
 		return;
 	}
-	// printf("make_childs\n");
+	printf("make_childs\n");
 	node *child_tmp;
 	int width = MAX_WIDTH;
 	row(parent, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
@@ -188,27 +206,46 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	diagonal_left_up(parent, true);
 	most_best_variant(parent);
 
-	// // int xxx = 1;
-	// // int yyy = 4;
-	// // printf("x=%d y=%d\n", xxx, yyy);
-	// // child_tmp = create_node(parent, xxx, yyy);
-	// // _print(child_tmp->map_in_node);
-	// // exit(1);
 	for (int i = 0; i < parent->variants.size(); ++i){
-		if (width > 0 and checkRules(parent->variants[i]._x, parent->variants[i]._y, parent->now_player)){
-			child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
-			width--;
-			// printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
-			// _print(child_tmp->map_in_node);
+		if (width > 0 and checkRules(parent->variants[i]._y, parent->variants[i]._x, parent->now_player)){
+			int _x_cap = -1;
+			int _y_cap = -1;
+			int res = this_win_finally(parent->variants[i]._x, parent->variants[i]._y, parent->now_player, &_x_cap, &_y_cap);
+
+			// res == 0  not win
+			// res == 1  finally win
+			// res == 2  win but can capture this
+			
+			if (res == 1){
+				// printf("FINALYY\n");
+				parent->heuristics = 100000000;
+				parent->x = parent->variants[i]._x;
+				parent->y = parent->variants[i]._y;
+				return;
+			}
+			else {
+				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
+				width--;
+				printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
+				_print(child_tmp->map_in_node);
+				if (res == 2){
+					all_variants  tmpvar;
+					tmpvar.num = 10000000000;
+					tmpvar._x = _x_cap;
+					tmpvar._y = _y_cap;
+					child_tmp->variants.push_back(tmpvar);
+					printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
+				}
+			}
 		}
 	}
+	// exit(1);
 	for (int i = 0; i < parent->nodes.size(); ++i){
-		// printf("child num %d create child-child\n", i);
-		// printf("in parent childe num %d\n", i);
+		printf("in parent child num %d\n", i);
 		// _print(parent->nodes[i]->map_in_node);
 		make_childs(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, START_PLAYER);
 	}
-
+	printf("----\n");
 	bool maximaze = true;
 	int limit_tmp, tmpx, tmpy;
 	int limit = parent->nodes[0]->heuristics;
@@ -273,6 +310,16 @@ void	_find_MF(){
 	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
 	printf("%lu\n", first_node->heuristics);
 	printf("x:%d y:%d\n", first_node->x, first_node->y);
+
+
+	// size_t 	sum = 0;
+	// vector<int> how_many_nums(5);
+	// iterate_all_variants(first_node, how_many_nums);
+
+	// sum = how_many_nums[0] + how_many_nums[1] * 30 + 
+	// how_many_nums[2]*300 + how_many_nums[3]*10000 + 
+	// how_many_nums[4]*10000000;
+	// printf("%lu\n", sum);
 	///////////////
 	// row(first_node, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
 	// row(first_node, true);
@@ -408,14 +455,20 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0){
-					_new[i] = num > _new[i] ? num : _new[i];
-					if (i > 2 and left_i == -1 and num == 2)//need for -1 1 1 0, if we have flang not our
-						_new[i] = 3 > _new[i] ? 3 : _new[i];
+					// _new[i] = num > _new[i] ? num : _new[i];
+					_new[i] += num;
+					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
+						// _new[i] = 3 > _new[i] ? 3 : _new[i];
+						_new[i] += 1;
+					} 
 				}
 				if (left_i != -1){
-					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
-					if (tmp[i] != 0 and tmp[i] == now_node->now_player and num == 2)//need for 0 1 1 -1, if we have flang not our
-						_new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
+					_new[left_i] += num;
+					// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
+					if (tmp[i] != 0 and tmp[i] == now_node->now_player and num == 2){//need for 0 1 1 -1, if we have flang not our
+						// _new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
+						_new[left_i] += 1;
+					}
 				}
 			}
 			left_i = -1;
@@ -429,8 +482,10 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 	// }
 	// printf("----\n");
 
-	if(num and left_i != -1)
-		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
+	if(num and left_i != -1){
+		// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
+		_new[left_i] += num;
+	}
 	return _new;
 }
 
@@ -457,14 +512,20 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0){
-					_new[i] = num > _new[i] ? num : _new[i];
-					if (i > 2 and left_i == -1 and num == 2)//need for -1 1 1 0, if we have flang not our
-						_new[i] = 3 > _new[i] ? 3 : _new[i];
+					_new[i] += num;
+					// _new[i] = num > _new[i] ? num : _new[i];
+					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
+						// _new[i] = 3 > _new[i] ? 3 : _new[i];
+						_new[i] += 1;
+					}
 				}
 				if (left_i != -1){
-					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
-					if (tmp[i] != 0 and tmp[i] != now_node->now_player and num == 2)
-						_new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
+					// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
+					_new[left_i] += num;
+					if (tmp[i] != 0 and tmp[i] != now_node->now_player and num == 2){
+						// _new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
+						_new[left_i] += 1;
+					}
 				}
 			}
 			left_i = -1;
@@ -472,8 +533,10 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 		}
 	}
 
-	if(num and left_i != -1)
-		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
+	if(num and left_i != -1){
+		_new[left_i] += num;
+		// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
+	}
 	// printf("new:\n");
 	// for (int i = 0; i < _new.size(); ++i)
 	// {
@@ -512,6 +575,7 @@ void	iterate_all_variants(node *nde, vector<int> &how_many_nums){
 			tmp.push_back(nde->map_in_node[x][y]);
 		checkH(tmp, nde->now_player, how_many_nums);
 	}
+	
 	//diagonal_right_up
 	for (int x = 0; x < nde->size ; ++x)
 	{
