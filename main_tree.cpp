@@ -252,7 +252,7 @@ int 	choose_best_child(node *parent, bool maximizingPlayer){
 	int x = parent->nodes[0]->x;
 	int y = parent->nodes[0]->y;
 
-
+	
 	for (int i = 0; i < parent->nodes.size(); ++i){
 		tmp_heur = parent->nodes[i]->heuristics;
 		tmpx = parent->nodes[i]->x;
@@ -361,10 +361,7 @@ void	free_nodes(node *parent)
 }
 
 void	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<int> > map, bool USE_OPTIMIZATION){
-	// int 	MAX_DEPTH = 4;
-	// int 	MAX_WIDTH = 3;
-	// int 	AI_PLAYER = 1;// AI player
-	int 	OTHER_PLAYER = 2;
+	int 	OTHER_PLAYER = AI_PLAYER * -1;
 	int 	alpha = -2147483000;
 	int 	beta = 2147483000;
 
@@ -401,7 +398,7 @@ int main()
 	int 	MAX_WIDTH = 3;
 	int 	AI_PLAYER = 1;
 	bool 	USE_OPTIMIZATION = true;
-	_find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH,read_from_file(), USE_OPTIMIZATION);
+	_find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH, read_from_file(), USE_OPTIMIZATION);
 
 	return 0;
 }
