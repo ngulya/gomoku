@@ -1,5 +1,5 @@
 // #include "class_tree.hpp"
-#include <bits/stdc++.h> 
+// #include <bits/stdc++.h> 
 # include <iostream>
 # include <vector>
 # include <iostream>
@@ -7,6 +7,7 @@
 # include <string>
 # include <fstream>
 using namespace std;
+
 
 struct all_variants { 
 	size_t num;
@@ -34,7 +35,7 @@ typedef struct			node
 	int 					sign_alpha;
 	int 					sign_beta;
 
-	size_t 					heuristics;
+	int 					heuristics;
 	int 					now_player;
 	int 					other_player;
 	int 					level_depth;
@@ -60,8 +61,7 @@ void					diagonal_left_up(node *nde, bool you);
 void					diagonal_right_up(node *nde, bool you);
 void					row(node *nde, bool you);
 void					column(node *nde, bool you);
-void 					checkH(vector<int>  tmp, int now_player, vector<int> &how_many_nums);
-void					iterate_all_variants(node *nde, vector<int> &how_many_nums);
+void					make_cross_map(node *parent);
 
 void	most_best_variant(node *nde){
 	int tmp_map, tmp_map_not_you, for_tmp;
@@ -166,42 +166,74 @@ node *	create_node(node *parent, int x, int y){
 
 
 
-void			return_heuristic(node *child, int START_PLAYER){
+int			return_heuristic(node *child, int AI_PLAYER){
 
-	size_t 	sum = 0;
-	vector<int> how_many_nums(5);
-	iterate_all_variants(child, how_many_nums);
+	int 	sum = 0;
+	int 	tmp_ai = 0;
+	int 	tmp_rival = 0;
+	vector<int> AI_player(5);
+	vector<int> rival_player(5);
+	for (int i = 0; i < 5; ++i)
+	{
+		AI_player[i] = 0;
+		rival_player[i] = 0;
+	}
+	for (int i = 0; i < child->cross_map.size(); ++i){
+		for (int j = 0; j < child->cross_map.size(); ++j){
+			if (child->now_player == AI_PLAYER){
+				tmp_ai = child->cross_map[i][j];
+				tmp_rival = child->cross_map_not_you[i][j];
+			}
+			else{
+				tmp_ai = child->cross_map_not_you[i][j];
+				tmp_rival = child->cross_map[i][j];
+			}
+			if (tmp_ai > 0){
+				if (tmp_ai > 5)
+					AI_player[4] += 1;
+				else
+					AI_player[tmp_ai - 1] += 1;
 
-	sum = how_many_nums[0] + how_many_nums[1] * 30 + 
-	how_many_nums[2]*300 + how_many_nums[3]*10000 + 
-	how_many_nums[4]*10000000;
-	if (how_many_nums[4] != 0)
-		child->win = true;
+			}
+			if (tmp_rival > 0){
+				if (tmp_rival > 5)
+					rival_player[4] += 1;
+				else
+					rival_player[tmp_rival - 1] += 1;
+			}
+		}
+	}
+	for (int i = 0; i < 5; ++i)
+		AI_player[i] = AI_player[i] - rival_player[i];
+	sum = AI_player[0] +
+	AI_player[1] * 15 + 
+	AI_player[2] * 300 + 
+	AI_player[3] * 6000 + 
+	AI_player[4] * 1000000;
+	if (child->now_player == AI_PLAYER){
+		if (AI_player[4] > 0)
+			child->win = true;
+	}
+	else{
+		if (AI_player[4] < 0)
+			child->win = true;
+	}
 	child->heuristics = sum;
-	// printf("SUM:%lu\n", sum);
+	printf("heuristics:%d\n", sum);
+	return sum;
 }
 
-int this_win_finally(int x,int y, int START_PLAYER, int *_x_cap , int *_y_cap){
+int this_win_finally(int x,int y, int AI_PLAYER, int *_x_cap , int *_y_cap){
 	
 	return 0;
-	if (x == 4 and y == 2 and START_PLAYER == 1){
+	if (x == 4 and y == 2 and AI_PLAYER == 1){
 		(*_x_cap) = 4;
 		(*_y_cap) = 1;
 		return 2;
 	}
 	return 0;
 }
-
-
-void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
-	if (parent->level_depth == MAX_DEPTH){
-		return_heuristic(parent, START_PLAYER);
-		printf("return_heuristic %lu\n", parent->heuristics);
-		return;
-	}
-	printf("make_childs\n");
-	node *child_tmp;
-	int width = MAX_WIDTH;
+void	make_cross_map(node *parent){
 	row(parent, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
 	row(parent, true);
 	column(parent, false);
@@ -210,24 +242,75 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 	diagonal_right_up(parent, true);
 	diagonal_left_up(parent, false);
 	diagonal_left_up(parent, true);
-	most_best_variant(parent);
+}
 
+int 	choose_best_child(node *parent, bool maximizingPlayer){
+	printf("choose_best_child\n");
+	int tmp_heur, tmpx, tmpy;
+	int heur = parent->nodes[0]->heuristics;
+	int x = parent->nodes[0]->x;
+	int y = parent->nodes[0]->y;
+
+
+	for (int i = 0; i < parent->nodes.size(); ++i){
+		tmp_heur = parent->nodes[i]->heuristics;
+		tmpx = parent->nodes[i]->x;
+		tmpy = parent->nodes[i]->y;
+		if (maximizingPlayer){
+			if (tmp_heur > heur){
+				heur = tmp_heur;
+				x = tmpx;
+				y = tmpy;
+			}
+		}
+		else{
+			if (tmp_heur < heur){
+				heur = tmp_heur;
+				x = tmpx;
+				y = tmpy;
+			}
+		}
+	}
+	// printf("heur %d %d %d\n", heur, x, y);
+	parent->heuristics = heur;
+	if (parent->level_depth == 0){
+		parent->x = x;
+		parent->y = y;
+	}
+	return heur;
+}
+
+int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alpha, int beta, bool maximizingPlayer){
+	printf("minimax\n");
+	node	*child_tmp;
+	int		width = MAX_WIDTH;
+	int		child_num = 0;
+	int		value = 2147483000;
+	int		result;
+	if (maximizingPlayer)
+		value = -2147483000;
+
+	make_cross_map(parent);
+
+	if (parent->level_depth == MAX_DEPTH)
+		return return_heuristic(parent, AI_PLAYER);
+
+	most_best_variant(parent);
 	for (int i = 0; i < parent->variants.size(); ++i){
 		if (width > 0 and checkRules(parent->variants[i]._y, parent->variants[i]._x, parent->now_player)){
-			int _x_cap = -1;
-			int _y_cap = -1;
-			int res = this_win_finally(parent->variants[i]._x, parent->variants[i]._y, parent->now_player, &_x_cap, &_y_cap);
-
-			// res == 0  not win
-			// res == 1  finally win
-			// res == 2  win but can capture this
+			int		_x_cap = -1;
+			int		_y_cap = -1;
+			int		res = this_win_finally(parent->variants[i]._x, parent->variants[i]._y, parent->now_player, &_x_cap, &_y_cap);
+			// res ->  0==not win 1==finally win     2==win but can capture this
 			
 			if (res == 1){
-				// printf("FINALYY\n");
-				parent->heuristics = 100000000;
+				if (maximizingPlayer)
+					parent->heuristics = 200000000;
+				else
+					parent->heuristics = -200000000;
 				parent->x = parent->variants[i]._x;
 				parent->y = parent->variants[i]._y;
-				return;
+				return parent->heuristics;
 			}
 			else {
 				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
@@ -242,59 +325,39 @@ void	make_childs(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int START_PLAYER){
 					child_tmp->variants.push_back(tmpvar);
 					printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
 				}
-			}
-		}
-	}
-	// exit(1);
-	for (int i = 0; i < parent->nodes.size(); ++i){
-		printf("in parent child num %d\n", i);
-		// _print(parent->nodes[i]->map_in_node);
-		make_childs(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, START_PLAYER);
-	}
-	printf("----\n");
-	bool maximaze = true;
-	int limit_tmp, tmpx, tmpy;
-	int limit = parent->nodes[0]->heuristics;
-	int x = parent->nodes[0]->x;
-	int y = parent->nodes[0]->y;
+				result = minimax(parent->nodes[child_num], MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, !maximizingPlayer);
+				child_num += 1;
 
+				if (maximizingPlayer){
+					value = max(value, result);
+					alpha = max(alpha, value);
+				}
+				else{
+					value = min(value, result);
+					beta = min(beta, value);
+				}
+				if (alpha >= beta){
+					printf("\n\nIT'S  WORK  alpha %d beta %d\n\n", alpha, beta);
+					// exit(1);
+					break;
+				}
+			}
+		}
+	}
 
-	if (parent->now_player == START_PLAYER)
-		maximaze = false;
-	// printf("find maxH\n");
-	for (int i = 0; i < parent->nodes.size(); ++i){
-		// check have we heuristics
-		limit_tmp = parent->nodes[i]->heuristics;
-		tmpx = parent->nodes[i]->x;
-		tmpy = parent->nodes[i]->y;
-		if (maximaze){
-			if (limit_tmp > limit){
-				limit = limit_tmp;
-				x = tmpx;
-				y = tmpy;
-			}
-		}
-		else{
-			if (limit_tmp < limit){
-				limit = limit_tmp;
-				x = tmpx;
-				y = tmpy;
-			}
-		}
-	}
-	// printf("limit %d %d %d\n", limit, x, y);
-	parent->heuristics = limit;
-	if (parent->level_depth == 0){
-		parent->x = x;
-		parent->y = y;
-	}
+	if (parent->nodes.size() <= 0)
+		return parent->heuristics;
+	return choose_best_child(parent, maximizingPlayer);
 }
 
-void	_find_MF(){
+void	_find_where_go(){
 	int MAX_DEPTH = 2;
 	int MAX_WIDTH = 2;
-	int START_PLAYER = 1;// AI player
+	int AI_PLAYER = 1;// AI player
 	int OTHER_PLAYER = 2;
+	int alpha = -2147483000;
+	int beta = 2147483000;
+
 	node *first_node = new node;
 
 	first_node->parent = nullptr;
@@ -303,9 +366,9 @@ void	_find_MF(){
 	// printf("---\n");
 	first_node->size = first_node->map_in_node.size();
 	first_node->level_depth = 0;
-	first_node->x = 0;
-	first_node->y = 0;
-	first_node->now_player = START_PLAYER;
+	first_node->x = -1;
+	first_node->y = -1;
+	first_node->now_player = AI_PLAYER;
 	first_node->other_player = OTHER_PLAYER;
 	first_node->win = false;
 	first_node->cross_map = first_node->map_in_node;
@@ -313,10 +376,16 @@ void	_find_MF(){
 		for (int y = 0; y < first_node->size; ++y)
 			first_node->cross_map[x][y] = 0;
 	first_node->cross_map_not_you = first_node->cross_map;
-	make_childs(first_node, MAX_DEPTH, MAX_WIDTH, START_PLAYER);
-	printf("%lu\n", first_node->heuristics);
+	minimax(first_node, MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, true);
+	printf("%d\n", first_node->heuristics);
 	printf("x:%d y:%d\n", first_node->x, first_node->y);
 
+	// make_cross_map(first_node);
+	// return_heuristic(first_node, AI_PLAYER);
+
+
+	// _print(first_node->cross_map);
+	// _print(first_node->cross_map_not_you);
 
 	// size_t 	sum = 0;
 	// vector<int> how_many_nums(5);
@@ -342,8 +411,8 @@ void	_find_MF(){
 }
 
 int main()
-{
-	_find_MF();
+{	
+	_find_where_go();
 	return 0;
 }
 
@@ -360,6 +429,98 @@ int main()
 
 
 
+// void	minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER){
+// 	printf("minimax\n");
+// 	node *child_tmp;
+// 	int width = MAX_WIDTH;
+// 	make_cross_map(parent);
+// 	if (parent->level_depth == MAX_DEPTH){
+// 		return_heuristic(parent, AI_PLAYER);
+// 		printf("return_heuristic %lu\n", parent->heuristics);
+// 		return;
+// 	}
+// 	most_best_variant(parent);
+
+// 	for (int i = 0; i < parent->variants.size(); ++i){
+// 		if (width > 0 and checkRules(parent->variants[i]._y, parent->variants[i]._x, parent->now_player)){
+// 			int _x_cap = -1;
+// 			int _y_cap = -1;
+// 			int res = this_win_finally(parent->variants[i]._x, parent->variants[i]._y, parent->now_player, &_x_cap, &_y_cap);
+
+// 			// res == 0  not win
+// 			// res == 1  finally win
+// 			// res == 2  win but can capture this
+			
+// 			if (res == 1){
+// 				// printf("FINALYY\n");
+// 				if (parent->now_player == AI_PLAYER)
+// 					parent->heuristics = 200000000;
+// 				else
+// 					parent->heuristics = -200000000;
+// 				parent->x = parent->variants[i]._x;
+// 				parent->y = parent->variants[i]._y;
+// 				return;
+// 			}
+// 			else {
+// 				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
+// 				width--;
+// 				printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
+// 				_print(child_tmp->map_in_node);
+// 				if (res == 2){
+// 					all_variants  tmpvar;
+// 					tmpvar.num = 10000000000;
+// 					tmpvar._x = _x_cap;
+// 					tmpvar._y = _y_cap;
+// 					child_tmp->variants.push_back(tmpvar);
+// 					printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
+// 				}
+// 			}
+// 		}
+// 	}
+// 	// exit(1);
+// 	for (int i = 0; i < parent->nodes.size(); ++i){
+// 		printf("in parent child num %d\n", i);
+// 		// _print(parent->nodes[i]->map_in_node);
+// 		minimax(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, AI_PLAYER);
+// 	}
+// 	printf("----\n");
+// 	bool maximaze = true;
+// 	int limit_tmp, tmpx, tmpy;
+// 	int limit = parent->nodes[0]->heuristics;
+// 	int x = parent->nodes[0]->x;
+// 	int y = parent->nodes[0]->y;
+
+
+// 	if (parent->now_player == AI_PLAYER)
+// 		maximaze = false;
+// 	// printf("find maxH\n");
+// 	for (int i = 0; i < parent->nodes.size(); ++i){
+// 		// check have we heuristics
+// 		limit_tmp = parent->nodes[i]->heuristics;
+// 		tmpx = parent->nodes[i]->x;
+// 		tmpy = parent->nodes[i]->y;
+// 		if (maximaze){
+// 			if (limit_tmp > limit){
+// 				limit = limit_tmp;
+// 				x = tmpx;
+// 				y = tmpy;
+// 			}
+// 		}
+// 		else{
+// 			if (limit_tmp < limit){
+// 				limit = limit_tmp;
+// 				x = tmpx;
+// 				y = tmpy;
+// 			}
+// 		}
+// 	}
+// 	// printf("limit %d %d %d\n", limit, x, y);
+// 	parent->heuristics = limit;
+// 	if (parent->level_depth == 0){
+// 		parent->x = x;
+// 		parent->y = y;
+// 	}
+// }
 
 
 
@@ -368,28 +529,36 @@ int main()
 
 
 
-void 	checkH(vector<int>  tmp, int now_player, vector<int> &how_many_nums){
-	int num = 0;
-	int left_i = -1;
-	for (int i = 0; i < tmp.size(); ++i){
-		if (tmp[i] == now_player){
-			if (i > 0 and tmp[i-1] == 0)
-				left_i = i-1;
-			num++;
-		}
-		else
-		{
-			if(num and (tmp[i] == 0 or left_i != -1))
-				how_many_nums[num - 1] += 1;
-			left_i = -1;
-			num = 0;
-		}
-	}
 
-	if(num and left_i != -1)
-		how_many_nums[num - 1] += 1;
 
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 vector<vector<int> > 	read_from_file()
 {
@@ -442,12 +611,7 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 	int num = 0;
 	int left_i = -1;
 	vector<int>  _new(tmp.size());
-	// printf("\nuold:\n");
-	// for (int i = 0; i < tmp.size(); ++i)
-	// {
-	// 	printf("%d ", tmp[i]);
-	// }
-	// printf("\n");
+
 
 	for (int i = 0; i < tmp.size(); ++i){
 		if (tmp[i] != 0 and tmp[i] != now_node->now_player)
@@ -461,19 +625,15 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0){
-					// _new[i] = num > _new[i] ? num : _new[i];
-					_new[i] += num;
+					_new[i] = num;
 					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
-						// _new[i] = 3 > _new[i] ? 3 : _new[i];
-						_new[i] += 1;
+						_new[i] = -3;
 					} 
 				}
 				if (left_i != -1){
-					_new[left_i] += num;
-					// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
+					_new[left_i] = num;
 					if (tmp[i] != 0 and tmp[i] == now_node->now_player and num == 2){//need for 0 1 1 -1, if we have flang not our
-						// _new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
-						_new[left_i] += 1;
+						_new[left_i] = -3;
 					}
 				}
 			}
@@ -481,17 +641,8 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 			num = 0;
 		}
 	}
-	// printf("new:\n");
-	// for (int i = 0; i < _new.size(); ++i)
-	// {
-	// 	printf("%d ", _new[i]);
-	// }
-	// printf("----\n");
-
-	if(num and left_i != -1){
-		// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
-		_new[left_i] += num;
-	}
+	if(num and left_i != -1)
+		_new[left_i] = num;
 	return _new;
 }
 
@@ -518,19 +669,15 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0){
-					_new[i] += num;
-					// _new[i] = num > _new[i] ? num : _new[i];
+					_new[i] = num;
 					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
-						// _new[i] = 3 > _new[i] ? 3 : _new[i];
-						_new[i] += 1;
+						_new[i] = -3;
 					}
 				}
 				if (left_i != -1){
-					// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
-					_new[left_i] += num;
+					_new[left_i] = num;
 					if (tmp[i] != 0 and tmp[i] != now_node->now_player and num == 2){
-						// _new[left_i] = 3 > _new[left_i] ? 3 : _new[left_i];
-						_new[left_i] += 1;
+						_new[left_i] = -3;
 					}
 				}
 			}
@@ -540,82 +687,17 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 	}
 
 	if(num and left_i != -1){
-		_new[left_i] += num;
-		// _new[left_i] = num > _new[left_i] ? num : _new[left_i];
+		_new[left_i] = num;
 	}
-	// printf("new:\n");
-	// for (int i = 0; i < _new.size(); ++i)
+	// for (int i = 0; i < tmp.size(); ++i)
 	// {
 	// 	printf("%d ", _new[i]);
 	// }
-	// printf("----\n");
-	
+	// printf("\n");
 	return _new;
 }
 
-	// Tree* 	p = new Tree();
-	// (*p).return_last_dep();
-	// node *first_node = new node;
-	// tmp_node->now_player = 1;
-	// tmp_node->nodes.push_back(new node);
-	// printf("%d\n", tmp_node->now_player);
-	// printf("%lu\n", tmp_node->nodes.size());
-	// // tmp_node->nodes[0]->now_player = 2;
-	// // printf("%d\n", tmp_node->nodes[0]->now_player);
 
-void	iterate_all_variants(node *nde, vector<int> &how_many_nums){
-
-	// column
-	for (int y = 0; y < nde->size ; ++y)
-	{
-		vector<int> tmp;
-		for (int x = 0; x < nde->size ; ++x)
-			tmp.push_back(nde->map_in_node[x][y]);
-		checkH(tmp, nde->now_player, how_many_nums);
-	}
-	// row
-	for (int x = 0; x < nde->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = 0; y < nde->size ; ++y)
-			tmp.push_back(nde->map_in_node[x][y]);
-		checkH(tmp, nde->now_player, how_many_nums);
-	}
-	
-	//diagonal_right_up
-	for (int x = 0; x < nde->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y)
-			tmp.push_back(nde->map_in_node[x - (nde->size - 1 - y)][y]);
-		checkH(tmp, nde->now_player, how_many_nums);
-
-	}
-	for (int x = 1; x < nde->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = 0; y <= nde->size - 1 - x; ++y)
-			tmp.push_back(nde->map_in_node[x+y][y]);
-		checkH(tmp, nde->now_player, how_many_nums);
-	}
-	// diagonal_left_up
-	for (int x = 0; x < nde->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = x; y >= 0; --y)
-			tmp.push_back(nde->map_in_node[x-y][y]);
-		checkH(tmp, nde->now_player, how_many_nums);
-	}
-	for (int x = 1; x < nde->size ; ++x)
-	{
-		vector<int> tmp;
-		for (int y = nde->size - 1; y >= x; --y)
-			tmp.push_back(nde->map_in_node[nde->size - 1 + x - y][y]);
-		checkH(tmp, nde->now_player, how_many_nums);
-	}
-
-
-}
 void	diagonal_left_up(node *nde, bool you){
 	vector<int>  _new;
 	int i;
@@ -627,17 +709,27 @@ void	diagonal_left_up(node *nde, bool you){
 		i = 0;
 		if (you){
 			_new = check(tmp, nde);
-			for (int y = x; y >= 0; --y, i++)
+
+			for (int y = x; y >= 0; --y, i++){
+				if (_new[i] == -3){
+					nde->cross_map_not_you[x-y][y] = -_new[i] > nde->cross_map_not_you[x-y][y] ? -_new[i] : nde->cross_map_not_you[x-y][y];
+					_new[i] = 2;
+				}
 				nde->cross_map[x-y][y] = _new[i] > nde->cross_map[x-y][y] ? _new[i] : nde->cross_map[x-y][y];
+			}
 		}
 		else{
 			_new = check_not_you(tmp, nde);
-			for (int y = x; y >= 0; --y, i++)
+			for (int y = x; y >= 0; --y, i++){
+				if (_new[i] == -3){
+					nde->cross_map[x-y][y] = -_new[i] > nde->cross_map[x-y][y] ? -_new[i] : nde->cross_map[x-y][y];
+					_new[i] = 2;
+				}
 				nde->cross_map_not_you[x-y][y] = _new[i] > nde->cross_map_not_you[x-y][y] ? _new[i] : nde->cross_map_not_you[x-y][y];
+			}
 		}
-
-
 	}
+
 	for (int x = 1; x < nde->size ; ++x)
 	{
 		vector<int> tmp;
@@ -647,13 +739,23 @@ void	diagonal_left_up(node *nde, bool you){
 		i = 0;
 		if (you){
 			_new = check(tmp, nde);
-			for (int y = nde->size - 1; y >= x; --y, i++)
+			for (int y = nde->size - 1; y >= x; --y, i++){
+				if (_new[i] == -3){
+					nde->cross_map_not_you[nde->size - 1 + x - y][y] = -_new[i] > nde->cross_map_not_you[nde->size - 1 + x - y][y] ? -_new[i] : nde->cross_map_not_you[nde->size - 1 + x - y][y];
+					_new[i] = 2;
+				}
 				nde->cross_map[nde->size - 1 + x - y][y] = _new[i] > nde->cross_map[nde->size - 1 + x - y][y] ? _new[i] : nde->cross_map[nde->size - 1 + x - y][y];
+			}
 		}
 		else{
 			_new = check_not_you(tmp, nde);
-			for (int y = nde->size - 1; y >= x; --y, i++)
+			for (int y = nde->size - 1; y >= x; --y, i++){
+				if (_new[i] == -3){
+					nde->cross_map[nde->size - 1 + x - y][y] = -_new[i] > nde->cross_map[nde->size - 1 + x - y][y] ? -_new[i] : nde->cross_map[nde->size - 1 + x - y][y];
+					_new[i] = 2;
+				}
 				nde->cross_map_not_you[nde->size - 1 + x - y][y] = _new[i] > nde->cross_map_not_you[nde->size - 1 + x - y][y] ? _new[i] : nde->cross_map_not_you[nde->size - 1 + x - y][y];
+			}
 		}
 
 	}
@@ -672,13 +774,23 @@ void	diagonal_right_up(node *nde, bool you){
 		i = 0;
 		if (you){
 			_new = check(tmp, nde);
-			for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++)
+			for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++){
+				if (_new[i] == -3){
+					nde->cross_map_not_you[x - (nde->size - 1 - y)][y] = -_new[i] > nde->cross_map_not_you[x - (nde->size - 1 - y)][y] ? -_new[i] : nde->cross_map_not_you[x - (nde->size - 1 - y)][y];
+					_new[i] = 2;
+				}
 				nde->cross_map[x - (nde->size - 1 - y)][y] = _new[i] > nde->cross_map[x - (nde->size - 1 - y)][y] ? _new[i] : nde->cross_map[x - (nde->size - 1 - y)][y];
+			}
 		}
 		else{
 			_new = check_not_you(tmp, nde);
-			for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++)
+			for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++){
+				if (_new[i] == -3){
+					nde->cross_map[x - (nde->size - 1 - y)][y] = -_new[i] > nde->cross_map[x - (nde->size - 1 - y)][y] ? -_new[i] : nde->cross_map[x - (nde->size - 1 - y)][y];
+					_new[i] = 2;
+				}
 				nde->cross_map_not_you[x - (nde->size - 1 - y)][y] = _new[i] > nde->cross_map_not_you[x - (nde->size - 1 - y)][y] ? _new[i] : nde->cross_map_not_you[x - (nde->size - 1 - y)][y];
+			}
 		}
 
 	}
@@ -690,13 +802,23 @@ void	diagonal_right_up(node *nde, bool you){
 		i = 0;
 		if (you){
 			_new = check(tmp, nde);
-			for (int y = 0; y <= nde->size - 1 - x; ++y, i++)
+			for (int y = 0; y <= nde->size - 1 - x; ++y, i++){
+				if (_new[i] == -3){
+					nde->cross_map_not_you[x+y][y] = -_new[i] > nde->cross_map_not_you[x+y][y] ? -_new[i] : nde->cross_map_not_you[x+y][y];
+					_new[i] = 2;
+				}
 				nde->cross_map[x+y][y] = _new[i] > nde->cross_map[x+y][y] ? _new[i] : nde->cross_map[x+y][y];
+			}
 		}
 		else{
 			_new = check_not_you(tmp, nde);
-			for (int y = 0; y <= nde->size - 1 - x; ++y, i++)
+			for (int y = 0; y <= nde->size - 1 - x; ++y, i++){
+				if (_new[i] == -3){
+					nde->cross_map[x+y][y] = -_new[i] > nde->cross_map[x+y][y] ? -_new[i] : nde->cross_map[x+y][y];
+					_new[i] = 2;
+				}
 				nde->cross_map_not_you[x+y][y] = _new[i] > nde->cross_map_not_you[x+y][y] ? _new[i] : nde->cross_map_not_you[x+y][y];
+			}
 		}
 	}
 }
@@ -714,13 +836,23 @@ void	row(node *nde, bool you){
 		i = 0;
 		if (you){
 			_new = check(tmp, nde);
-			for (int y = 0; y < nde->size ; ++y, i++)
+			for (int y = 0; y < nde->size ; ++y, i++){
+				if (_new[i] == -3){
+					nde->cross_map_not_you[x][y] = -_new[i] > nde->cross_map_not_you[x][y] ? -_new[i] : nde->cross_map_not_you[x][y];
+					_new[i] = 2;
+				}
 				nde->cross_map[x][y] = _new[i] > nde->cross_map[x][y] ? _new[i] : nde->cross_map[x][y];
+			}
 		}
 		else{
 			_new = check_not_you(tmp, nde);
-			for (int y = 0; y < nde->size ; ++y, i++)
+			for (int y = 0; y < nde->size ; ++y, i++){
+				if (_new[i] == -3){
+					nde->cross_map[x][y] = -_new[i] > nde->cross_map[x][y] ? -_new[i] : nde->cross_map[x][y];
+					_new[i] = 2;
+				}
 				nde->cross_map_not_you[x][y] = _new[i] > nde->cross_map_not_you[x][y] ? _new[i] : nde->cross_map_not_you[x][y];
+			}
 		}
 
 	}
@@ -738,13 +870,28 @@ void	column(node *nde, bool you){
 		i = 0;
 		if (you){
 			_new = check(tmp, nde);
-			for (int x = 0; x < nde->size ; ++x, i++)
+			for (int x = 0; x < nde->size ; ++x, i++){
+				if (_new[i] == -3){
+					nde->cross_map_not_you[x][y] = -_new[i] > nde->cross_map_not_you[x][y] ? -_new[i] : nde->cross_map_not_you[x][y];
+					_new[i] = 2;
+				}
 				nde->cross_map[x][y] = _new[i] > nde->cross_map[x][y] ? _new[i] : nde->cross_map[x][y];
+			}
 		}
 		else{
 			_new = check_not_you(tmp, nde);
-			for (int x = 0; x < nde->size ; ++x, i++)
+			for (int x = 0; x < nde->size ; ++x, i++){
+				if (_new[i] == -3){
+					nde->cross_map[x][y] = -_new[i] > nde->cross_map[x][y] ? -_new[i] : nde->cross_map[x][y];
+					_new[i] = 2;
+				}
 				nde->cross_map_not_you[x][y] = _new[i] > nde->cross_map_not_you[x][y] ? _new[i] : nde->cross_map_not_you[x][y];
+			}
 		}
 	}
 }
+
+
+
+
+
