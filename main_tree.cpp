@@ -6,8 +6,10 @@
 # include <stdlib.h>
 # include <string>
 # include <fstream>
+# include <ctime>
 using namespace std;
 
+int NUM_NODE;
 
 struct all_variants { 
 	size_t num;
@@ -31,7 +33,6 @@ typedef struct			node
 	bool					win;
 	size_t					alpha;
 	size_t					beta;
-	
 	int 					sign_alpha;
 	int 					sign_beta;
 
@@ -219,19 +220,19 @@ int			return_heuristic(node *child, int AI_PLAYER){
 			child->win = true;
 	}
 	child->heuristics = sum;
-	printf("heuristics:%d\n", sum);
+	// printf("heuristics:%d\n", sum);
 	return sum;
 }
 
 int this_win_finally(int x,int y, int AI_PLAYER, int *_x_cap , int *_y_cap){
 	
 	return 0;
-	if (x == 4 and y == 2 and AI_PLAYER == 1){
-		(*_x_cap) = 4;
-		(*_y_cap) = 1;
-		return 2;
-	}
-	return 0;
+	// if (x == 4 and y == 2 and AI_PLAYER == 1){
+	// 	(*_x_cap) = 4;
+	// 	(*_y_cap) = 1;
+	// 	return 2;
+	// }
+	// return 0;
 }
 void	make_cross_map(node *parent){
 	row(parent, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
@@ -245,7 +246,7 @@ void	make_cross_map(node *parent){
 }
 
 int 	choose_best_child(node *parent, bool maximizingPlayer){
-	printf("choose_best_child\n");
+	// printf("choose_best_child\n");
 	int tmp_heur, tmpx, tmpy;
 	int heur = parent->nodes[0]->heuristics;
 	int x = parent->nodes[0]->x;
@@ -280,8 +281,8 @@ int 	choose_best_child(node *parent, bool maximizingPlayer){
 	return heur;
 }
 
-int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alpha, int beta, bool maximizingPlayer){
-	printf("minimax\n");
+int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alpha, int beta, bool maximizingPlayer, bool USE_OPTIMIZATION){
+	// printf("minimax\n");
 	node	*child_tmp;
 	int		width = MAX_WIDTH;
 	int		child_num = 0;
@@ -292,6 +293,7 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 
 	make_cross_map(parent);
 
+	NUM_NODE += 1;
 	if (parent->level_depth == MAX_DEPTH)
 		return return_heuristic(parent, AI_PLAYER);
 
@@ -315,8 +317,8 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 			else {
 				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
 				width--;
-				printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
-				_print(child_tmp->map_in_node);
+				// printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
+				// _print(child_tmp->map_in_node);
 				if (res == 2){
 					all_variants  tmpvar;
 					tmpvar.num = 10000000000;
@@ -325,7 +327,7 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 					child_tmp->variants.push_back(tmpvar);
 					printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
 				}
-				result = minimax(parent->nodes[child_num], MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, !maximizingPlayer);
+				result = minimax(parent->nodes[child_num], MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, !maximizingPlayer, USE_OPTIMIZATION);
 				child_num += 1;
 
 				if (maximizingPlayer){
@@ -336,11 +338,9 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 					value = min(value, result);
 					beta = min(beta, value);
 				}
-				if (alpha >= beta){
-					printf("\n\nIT'S  WORK  alpha %d beta %d\n\n", alpha, beta);
-					// exit(1);
-					break;
-				}
+				if (USE_OPTIMIZATION)
+					if (alpha >= beta)
+						break;
 			}
 		}
 	}
@@ -350,18 +350,27 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 	return choose_best_child(parent, maximizingPlayer);
 }
 
-void	_find_where_go(){
-	int MAX_DEPTH = 2;
-	int MAX_WIDTH = 2;
-	int AI_PLAYER = 1;// AI player
-	int OTHER_PLAYER = 2;
-	int alpha = -2147483000;
-	int beta = 2147483000;
+void	free_nodes(node *parent)
+{
+	if (parent->nodes.size() <= 0)
+		return;
+	for (int i = 0; i < parent->nodes.size(); ++i){
+		free_nodes(parent->nodes[i]);
+		delete parent->nodes[i];
+	}
+}
+
+void	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<int> > map, bool USE_OPTIMIZATION){
+	// int 	MAX_DEPTH = 4;
+	// int 	MAX_WIDTH = 3;
+	// int 	AI_PLAYER = 1;// AI player
+	int 	OTHER_PLAYER = 2;
+	int 	alpha = -2147483000;
+	int 	beta = 2147483000;
 
 	node *first_node = new node;
-
 	first_node->parent = nullptr;
-	first_node->map_in_node = read_from_file();
+	first_node->map_in_node = map;
 	_print(first_node->map_in_node);
 	// printf("---\n");
 	first_node->size = first_node->map_in_node.size();
@@ -376,179 +385,26 @@ void	_find_where_go(){
 		for (int y = 0; y < first_node->size; ++y)
 			first_node->cross_map[x][y] = 0;
 	first_node->cross_map_not_you = first_node->cross_map;
-	minimax(first_node, MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, true);
+	minimax(first_node, MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, true, USE_OPTIMIZATION);
+
 	printf("%d\n", first_node->heuristics);
 	printf("x:%d y:%d\n", first_node->x, first_node->y);
+	printf("NUM %d\n", NUM_NODE);
 
-	// make_cross_map(first_node);
-	// return_heuristic(first_node, AI_PLAYER);
-
-
-	// _print(first_node->cross_map);
-	// _print(first_node->cross_map_not_you);
-
-	// size_t 	sum = 0;
-	// vector<int> how_many_nums(5);
-	// iterate_all_variants(first_node, how_many_nums);
-
-	// sum = how_many_nums[0] + how_many_nums[1] * 30 + 
-	// how_many_nums[2]*300 + how_many_nums[3]*10000 + 
-	// how_many_nums[4]*10000000;
-	// printf("%lu\n", sum);
-	///////////////
-	// row(first_node, false);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
-	// row(first_node, true);
-	// column(first_node, false);
-	// column(first_node, true);
-	// diagonal_right_up(first_node, false);
-	// diagonal_right_up(first_node, true);
-	// diagonal_left_up(first_node, false);
-	// diagonal_left_up(first_node, true);
-	// _print(first_node->cross_map);
-	// _print(first_node->cross_map_not_you);
-	///////////////
-	
+	free_nodes(first_node);
+	delete first_node;
 }
 
 int main()
 {	
-	_find_where_go();
+	int 	MAX_DEPTH = 4;
+	int 	MAX_WIDTH = 3;
+	int 	AI_PLAYER = 1;
+	bool 	USE_OPTIMIZATION = true;
+	_find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH,read_from_file(), USE_OPTIMIZATION);
+
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void	minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER){
-// 	printf("minimax\n");
-// 	node *child_tmp;
-// 	int width = MAX_WIDTH;
-// 	make_cross_map(parent);
-// 	if (parent->level_depth == MAX_DEPTH){
-// 		return_heuristic(parent, AI_PLAYER);
-// 		printf("return_heuristic %lu\n", parent->heuristics);
-// 		return;
-// 	}
-// 	most_best_variant(parent);
-
-// 	for (int i = 0; i < parent->variants.size(); ++i){
-// 		if (width > 0 and checkRules(parent->variants[i]._y, parent->variants[i]._x, parent->now_player)){
-// 			int _x_cap = -1;
-// 			int _y_cap = -1;
-// 			int res = this_win_finally(parent->variants[i]._x, parent->variants[i]._y, parent->now_player, &_x_cap, &_y_cap);
-
-// 			// res == 0  not win
-// 			// res == 1  finally win
-// 			// res == 2  win but can capture this
-			
-// 			if (res == 1){
-// 				// printf("FINALYY\n");
-// 				if (parent->now_player == AI_PLAYER)
-// 					parent->heuristics = 200000000;
-// 				else
-// 					parent->heuristics = -200000000;
-// 				parent->x = parent->variants[i]._x;
-// 				parent->y = parent->variants[i]._y;
-// 				return;
-// 			}
-// 			else {
-// 				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
-// 				width--;
-// 				printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
-// 				_print(child_tmp->map_in_node);
-// 				if (res == 2){
-// 					all_variants  tmpvar;
-// 					tmpvar.num = 10000000000;
-// 					tmpvar._x = _x_cap;
-// 					tmpvar._y = _y_cap;
-// 					child_tmp->variants.push_back(tmpvar);
-// 					printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
-// 				}
-// 			}
-// 		}
-// 	}
-// 	// exit(1);
-// 	for (int i = 0; i < parent->nodes.size(); ++i){
-// 		printf("in parent child num %d\n", i);
-// 		// _print(parent->nodes[i]->map_in_node);
-// 		minimax(parent->nodes[i], MAX_DEPTH, MAX_WIDTH, AI_PLAYER);
-// 	}
-// 	printf("----\n");
-// 	bool maximaze = true;
-// 	int limit_tmp, tmpx, tmpy;
-// 	int limit = parent->nodes[0]->heuristics;
-// 	int x = parent->nodes[0]->x;
-// 	int y = parent->nodes[0]->y;
-
-
-// 	if (parent->now_player == AI_PLAYER)
-// 		maximaze = false;
-// 	// printf("find maxH\n");
-// 	for (int i = 0; i < parent->nodes.size(); ++i){
-// 		// check have we heuristics
-// 		limit_tmp = parent->nodes[i]->heuristics;
-// 		tmpx = parent->nodes[i]->x;
-// 		tmpy = parent->nodes[i]->y;
-// 		if (maximaze){
-// 			if (limit_tmp > limit){
-// 				limit = limit_tmp;
-// 				x = tmpx;
-// 				y = tmpy;
-// 			}
-// 		}
-// 		else{
-// 			if (limit_tmp < limit){
-// 				limit = limit_tmp;
-// 				x = tmpx;
-// 				y = tmpy;
-// 			}
-// 		}
-// 	}
-// 	// printf("limit %d %d %d\n", limit, x, y);
-// 	parent->heuristics = limit;
-// 	if (parent->level_depth == 0){
-// 		parent->x = x;
-// 		parent->y = y;
-// 	}
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
