@@ -28,6 +28,12 @@ typedef struct			node
 	vector<vector<int> >	cross_map_not_you;
 	vector<all_variants>	variants;
 	bool					win;
+	size_t					alpha;
+	size_t					beta;
+	
+	int 					sign_alpha;
+	int 					sign_beta;
+
 	size_t 					heuristics;
 	int 					now_player;
 	int 					other_player;
