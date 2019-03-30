@@ -360,16 +360,18 @@ void	free_nodes(node *parent)
 	}
 }
 
-void	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<int> > map, bool USE_OPTIMIZATION){
+all_variants	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<int> > map, bool USE_OPTIMIZATION){
 	int 	OTHER_PLAYER = AI_PLAYER * -1;
 	int 	alpha = -2147483000;
 	int 	beta = 2147483000;
+	all_variants ret;
 
+	NUM_NODE = 0;
 	node *first_node = new node;
 	first_node->parent = nullptr;
 	first_node->map_in_node = map;
 	_print(first_node->map_in_node);
-	// printf("---\n");
+
 	first_node->size = first_node->map_in_node.size();
 	first_node->level_depth = 0;
 	first_node->x = -1;
@@ -384,12 +386,15 @@ void	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<i
 	first_node->cross_map_not_you = first_node->cross_map;
 	minimax(first_node, MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, true, USE_OPTIMIZATION);
 
-	printf("%d\n", first_node->heuristics);
-	printf("x:%d y:%d\n", first_node->x, first_node->y);
-	printf("NUM %d\n", NUM_NODE);
+	ret.num = NUM_NODE;
+	ret._x = first_node->y;
+	ret._y = first_node->x;
+
 
 	free_nodes(first_node);
 	delete first_node;
+
+	return ret;
 }
 
 int main()
@@ -398,7 +403,10 @@ int main()
 	int 	MAX_WIDTH = 3;
 	int 	AI_PLAYER = 1;
 	bool 	USE_OPTIMIZATION = true;
-	_find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH, read_from_file(), USE_OPTIMIZATION);
+	all_variants tmp;
+	tmp = _find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH, read_from_file(), USE_OPTIMIZATION);
+	printf("%lu\n", tmp.num);
+	printf("%d %d\n", tmp._x, tmp._y);
 
 	return 0;
 }
@@ -504,12 +512,6 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 	int left_i = -1;
 	vector<int>  _new(tmp.size());
 
-	// printf("\nuold:\n");
-	// for (int i = 0; i < tmp.size(); ++i)
-	// {
-	// 	printf("%d ", tmp[i]);
-	// }
-	// printf("\n");
 	for (int i = 0; i < tmp.size(); ++i){
 		if (tmp[i] == now_node->now_player)
 		{
@@ -542,11 +544,6 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 	if(num and left_i != -1){
 		_new[left_i] = num;
 	}
-	// for (int i = 0; i < tmp.size(); ++i)
-	// {
-	// 	printf("%d ", _new[i]);
-	// }
-	// printf("\n");
 	return _new;
 }
 
