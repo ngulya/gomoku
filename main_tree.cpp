@@ -30,12 +30,14 @@ typedef struct			node
 	vector<vector<int> >	cross_map;
 	vector<vector<int> >	cross_map_not_you;
 	vector<all_variants>	variants;
+	vector<all_variants>	variants_capture;
 	bool					win;
 	size_t					alpha;
 	size_t					beta;
+	int 					AIcaptrue;
+	int 					HUcaptrue;
 	int 					sign_alpha;
 	int 					sign_beta;
-
 	int 					heuristics;
 	int 					now_player;
 	int 					other_player;
@@ -92,8 +94,12 @@ void	most_best_variant(node *nde){
 			}		
 			nde->cross_map[x][y] = tmp_map + tmp_map_not_you;
 		}
-			
 	sort(nde->variants.begin(), nde->variants.end(), compare_variants);
+
+	for (int i = 0; i < nde->variants.size(); ++i)
+	{
+		printf("Sum %lu  x:%d y:%d\n", nde->variants[i].num, nde->variants[i]._x, nde->variants[i]._y);
+	}
 }
 
 bool	checkRules(int x, int y, int player){
@@ -102,7 +108,8 @@ bool	checkRules(int x, int y, int player){
 
 
 
-node *	create_node(node *parent, int x, int y){
+node *	create_node(node *parent, int x, int y, int AI_player){
+	bool 	hasCap = false;
 	node *child = new node;//create template width**depth 
 	child->map_in_node = parent->map_in_node;
 	child->map_in_node[x][y] = parent->now_player;
@@ -113,46 +120,64 @@ node *	create_node(node *parent, int x, int y){
 	if (y > 2 and child->map_in_node[x][y - 1] != 0 and child->map_in_node[x][y - 1] == child->map_in_node[x][y - 2] and child->map_in_node[x][y - 2] != parent->now_player and child->map_in_node[x][y - 3] == parent->now_player){
 		child->map_in_node[x][y-1] = 0;
 		child->map_in_node[x][y-2] = 0;
+		hasCap = true;
 	}//left
 	if (y < (child->size - 3) and child->map_in_node[x][y + 1] != 0 and child->map_in_node[x][y + 1] == child->map_in_node[x][y + 2] and child->map_in_node[x][y + 2] != parent->now_player and child->map_in_node[x][y + 3] == parent->now_player){
 		child->map_in_node[x][y+1] = 0;
 		child->map_in_node[x][y+2] = 0;
+		hasCap = true;
 	}//right
 	if (x > 2 and child->map_in_node[x-1][y] != 0 and child->map_in_node[x-1][y] == child->map_in_node[x-2][y] and child->map_in_node[x-2][y] != parent->now_player and child->map_in_node[x-3][y] == parent->now_player){
 		child->map_in_node[x-1][y] = 0;
 		child->map_in_node[x-2][y] = 0;
+		hasCap = true;
 	}//up
 	if (x < (child->size - 3) and child->map_in_node[x+1][y] != 0 and child->map_in_node[x+1][y] == child->map_in_node[x+2][y] and child->map_in_node[x+2][y] != parent->now_player and child->map_in_node[x+3][y] == parent->now_player){
 		child->map_in_node[x+1][y] = 0;
 		child->map_in_node[x+2][y] = 0;
+		hasCap = true;
 	}//right
 
 	if (x > 2 and y > 2 and child->map_in_node[x-1][y-1] != 0 and child->map_in_node[x-1][y-1] == child->map_in_node[x-2][y-2] and child->map_in_node[x-2][y-2] != parent->now_player and child->map_in_node[x-3][y-3] == parent->now_player){
 		child->map_in_node[x-1][y-1] = 0;
 		child->map_in_node[x-2][y-2] = 0;
+		hasCap = true;
 	}//left_up
 	
 
 	if (x < (child->size - 3) and y < (child->size - 3) and child->map_in_node[x+1][y+1] != 0 and child->map_in_node[x+1][y+1] == child->map_in_node[x+2][y+2] and child->map_in_node[x+2][y+2] != parent->now_player and child->map_in_node[x+3][y+3] == parent->now_player){
 		child->map_in_node[x+1][y+1] = 0;
 		child->map_in_node[x+2][y+2] = 0;
+		hasCap = true;
 	}//right down
 
 
 	if (x > 2 and y < (child->size - 3) and child->map_in_node[x-1][y+1] != 0 and child->map_in_node[x-1][y+1] == child->map_in_node[x-2][y+2] and child->map_in_node[x-2][y+2] != parent->now_player and child->map_in_node[x-3][y+3] == parent->now_player){
 		child->map_in_node[x-1][y+1] = 0;
 		child->map_in_node[x-2][y+2] = 0;
+		hasCap = true;
 	}//right_up
 	
 
 	if (y > 2 and x < (child->size - 3) and child->map_in_node[x+1][y-1] != 0 and child->map_in_node[x+1][y-1] == child->map_in_node[x+2][y-2] and child->map_in_node[x+2][y-2] != parent->now_player and child->map_in_node[x+3][y-3] == parent->now_player){
 		child->map_in_node[x+1][y-1] = 0;
 		child->map_in_node[x+2][y-2] = 0;
+		hasCap = true;
 	}//left down
-	
+
+	child->AIcaptrue = parent->AIcaptrue;
+	child->HUcaptrue = parent->HUcaptrue;
+
+	if (hasCap){
+		if (parent->now_player == AI_player)
+			child->AIcaptrue += 1;
+		else
+			child->HUcaptrue += 1;
+	}
 
 	child->now_player = parent->other_player;
 	child->other_player = parent->now_player;
+
 	child->cross_map = child->map_in_node;
 	child->level_depth = parent->level_depth + 1;
 	child->win = false;
@@ -291,8 +316,11 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 	if (maximizingPlayer)
 		value = -2147483000;
 
+	printf("%d\n", parent->level_depth);
 	make_cross_map(parent);
-
+	// _print(parent->cross_map);
+	// _print(parent->cross_map_not_you);
+	// exit(1);
 	NUM_NODE += 1;
 	if (parent->level_depth == MAX_DEPTH)
 		return return_heuristic(parent, AI_PLAYER);
@@ -315,9 +343,31 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 				return parent->heuristics;
 			}
 			else {
-				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y);
+				parent->variants[i]._x = 3;
+				parent->variants[i]._y = 2;
+				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y, AI_PLAYER);
+	
+				printf("AI: %d    HU: %d\n", child_tmp->AIcaptrue, child_tmp->HUcaptrue);
+				if (child_tmp->other_player == AI_PLAYER && child_tmp->AIcaptrue == 5){
+					printf("AI win\n");
+					printf("maximizingPlayer %d\n", maximizingPlayer);
+					exit(1);
+					parent->heuristics = 200000000;
+					parent->x = parent->variants[i]._x;
+					parent->y = parent->variants[i]._y;
+					return parent->heuristics;
+				}
+				if (child_tmp->other_player != AI_PLAYER && child_tmp->HUcaptrue == 5){
+					printf("HU win\n");
+					exit(1);
+					parent->heuristics = -200000000;
+					parent->x = parent->variants[i]._x;
+					parent->y = parent->variants[i]._y;
+					return parent->heuristics;
+				}
+				exit(1);
 				width--;
-				// printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
+				printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
 				// _print(child_tmp->map_in_node);
 				if (res == 2){
 					all_variants  tmpvar;
@@ -360,8 +410,11 @@ void	free_nodes(node *parent)
 	}
 }
 
-all_variants	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<int> > map, bool USE_OPTIMIZATION){
-	int 	OTHER_PLAYER = AI_PLAYER * -1;
+all_variants	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<vector<int> > map, bool USE_OPTIMIZATION, int AIcaptrue, int HUcaptrue){
+	// ????????????????
+	int 	OTHER_PLAYER = 2;
+	// ????????????????
+	// int 	OTHER_PLAYER = AI_PLAYER * -1;
 	int 	alpha = -2147483000;
 	int 	beta = 2147483000;
 	all_variants ret;
@@ -371,6 +424,8 @@ all_variants	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<
 	first_node->parent = nullptr;
 	first_node->map_in_node = map;
 	_print(first_node->map_in_node);
+	first_node->AIcaptrue = AIcaptrue;
+	first_node->HUcaptrue = HUcaptrue;
 
 	first_node->size = first_node->map_in_node.size();
 	first_node->level_depth = 0;
@@ -399,15 +454,17 @@ all_variants	_find_where_go(int AI_PLAYER, int MAX_DEPTH, int MAX_WIDTH, vector<
 
 int main()
 {	
-	int 	MAX_DEPTH = 4;
+	int 	MAX_DEPTH = 5;
 	int 	MAX_WIDTH = 3;
 	int 	AI_PLAYER = 1;
+	int 	AIcaptrue = 4;
+	int 	HUcaptrue = 0;
 	bool 	USE_OPTIMIZATION = true;
 	all_variants tmp;
-	tmp = _find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH, read_from_file(), USE_OPTIMIZATION);
+
+	tmp = _find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH, read_from_file(), USE_OPTIMIZATION, AIcaptrue, HUcaptrue);
 	printf("%lu\n", tmp.num);
 	printf("%d %d\n", tmp._x, tmp._y);
-
 	return 0;
 }
 
