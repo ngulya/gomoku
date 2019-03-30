@@ -308,18 +308,15 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 		value = -2147483000;
 
 	printf("%d\n", parent->level_depth);
-	// row(parent);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
 		
+	row(parent);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
 	column(parent);
-	printf("parent->cross_map\n");
-	_print(parent->cross_map);
-	
 	diagonal_left_up(parent);
-	// diagonal_right_up(parent);
-	printf("parent->cross_map\n");
+	diagonal_right_up(parent);
+	printf("\nparent->cross_map");
 	_print(parent->cross_map);
-	// printf("parent->cross_map_not_you\n");
-	// _print(parent->cross_map_not_you);
+	printf("\nparent->cross_map_not_you");
+	_print(parent->cross_map_not_you);
 	exit(1);
 	NUM_NODE += 1;
 	if (parent->level_depth == MAX_DEPTH)
@@ -661,10 +658,13 @@ void	diagonal_left_up(node *nde){
 
 	for (int x = 1; x < nde->size ; ++x)
 	{
-		vector<int> tmp;
-		for (int y = nde->size - 1; y >= x; --y)
-			tmp.push_back(nde->map_in_node[nde->size - 1 + x - y][y]);
 
+		vector<int> tmp;
+		for (int y = nde->size - 1; y >= x; --y){
+			// printf("%4d", nde->map_in_node[nde->size - 1 + x - y][y]);
+			tmp.push_back(nde->map_in_node[nde->size - 1 + x - y][y]);
+		}
+		// printf("\n");
 		i = 0;
 		_you = check(tmp, nde);
 		_not_you = check_not_you(tmp, nde);
