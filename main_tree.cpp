@@ -308,13 +308,14 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 		value = -2147483000;
 
 	printf("%d\n", parent->level_depth);
-	row(parent);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
-	printf("parent->cross_map\n");
-	_print(parent->cross_map);
+	// row(parent);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
 		
 	column(parent);
+	printf("parent->cross_map\n");
+	_print(parent->cross_map);
+	
+	diagonal_left_up(parent);
 	// diagonal_right_up(parent);
-	// diagonal_left_up(parent);
 	printf("parent->cross_map\n");
 	_print(parent->cross_map);
 	// printf("parent->cross_map_not_you\n");
@@ -575,13 +576,13 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0){
-					_new[i] = num;
+					_new[i] = num > _new[i] ? num : _new[i];
 					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
 						_new[i] = -1;
 					} 
 				}
 				if (left_i != -1){
-					_new[left_i] = num;
+					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 					if (tmp[i] != 0 and tmp[i] == now_node->now_player and num == 2){//need for 0 1 1 -1, if we have flang not our
 						_new[left_i] = -1;
 					}
@@ -592,7 +593,7 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 		}
 	}
 	if(num and left_i != -1)
-		_new[left_i] = num;
+			_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 	return _new;
 }
 
@@ -600,6 +601,8 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 	int num = 0;
 	int left_i = -1;
 	vector<int>  _new(tmp.size());
+
+
 
 	for (int i = 0; i < tmp.size(); ++i){
 		if (tmp[i] == now_node->now_player)
@@ -613,13 +616,13 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 			if(num)
 			{
 				if (tmp[i] == 0){
-					_new[i] = num;
+					_new[i] = num > _new[i] ? num : _new[i];
 					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
 						_new[i] = -1;
 					}
 				}
 				if (left_i != -1){
-					_new[left_i] = num;
+					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 					if (tmp[i] != 0 and tmp[i] != now_node->now_player and num == 2){
 						_new[left_i] = -1;
 					}
@@ -629,18 +632,18 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 			num = 0;
 		}
 	}
-
 	if(num and left_i != -1){
-		_new[left_i] = num;
+		_new[left_i] = num > _new[left_i] ? num : _new[left_i];;
 	}
 	return _new;
 }
 
 
 void	diagonal_left_up(node *nde){
+	printf("diagonal_left_up\n");
 	vector<int>		_you;
 	vector<int>		_not_you;
-	int 			i, _X, _Y;
+	int 			i;
 
 	for (int x = 0; x < nde->size ; ++x)
 	{
@@ -651,11 +654,8 @@ void	diagonal_left_up(node *nde){
 		i = 0;
 		_you = check(tmp, nde);
 		_not_you = check_not_you(tmp, nde);
-		for (int y = x; y >= 0; --y, i++){
-			_X = x-y;
-			_Y = y;
-			_in_cross_maps(nde, _X, _Y, _you[i], _not_you[i]);
-		}
+		for (int y = x; y >= 0; --y, i++)
+			_in_cross_maps(nde, x-y, y, _you[i], _not_you[i]);
 
 	}
 
@@ -668,20 +668,18 @@ void	diagonal_left_up(node *nde){
 		i = 0;
 		_you = check(tmp, nde);
 		_not_you = check_not_you(tmp, nde);
-		for (int y = nde->size - 1; y >= x; --y, i++){
-			_X = nde->size - 1 + x - y;
-			_Y = y;
-			_in_cross_maps(nde, _X, _Y, _you[i], _not_you[i]);
-		}
+		for (int y = nde->size - 1; y >= x; --y, i++)
+			_in_cross_maps(nde, nde->size - 1 + x - y, y, _you[i], _not_you[i]);
 
 	}
 }
 
 
 void	diagonal_right_up(node *nde){
+	printf("diagonal_right_up\n");
 	vector<int> 	_you;
 	vector<int> 	_not_you;
-	int				i, _X, _Y;
+	int				i;
 
 	for (int x = 0; x < nde->size ; ++x)
 	{
@@ -692,53 +690,68 @@ void	diagonal_right_up(node *nde){
 		i = 0;
 		_you = check(tmp, nde);
 		_not_you = check_not_you(tmp, nde);
-		for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++){
-			_X = x - (nde->size - 1 - y);
-			_Y = y;
-			_in_cross_maps(nde, _X, _Y, _you[i], _not_you[i]);
-		}
+		for (int y = nde->size - 1 - x; y <= nde->size - 1; ++y, i++)
+			_in_cross_maps(nde,  x - (nde->size - 1 - y), y, _you[i], _not_you[i]);
 	}
 
 	for (int x = 1; x < nde->size ; ++x)
 	{
 		vector<int> tmp;
 		for (int y = 0; y <= nde->size - 1 - x; ++y)
-			tmp.push_back(nde->map_in_node[x+y][_Y]);
+			tmp.push_back(nde->map_in_node[x+y][y]);
 
 		i = 0;
 		_you = check(tmp, nde);
 		_not_you = check_not_you(tmp, nde);
-		for (int y = 0; y <= nde->size - 1 - x; ++y, i++){
-			_X = x+y;
-			_Y = y;
-			_in_cross_maps(nde, _X, _Y, _you[i], _not_you[i]);
-		}
+		for (int y = 0; y <= nde->size - 1 - x; ++y, i++)
+			_in_cross_maps(nde, x+y, y, _you[i], _not_you[i]);
 	}
 }
 
 
 void	row(node *nde){
+	printf("row\n");
 	vector<int>  _you;
 	vector<int>  _not_you;
 	int i;
 	for (int x = 0; x < nde->size ; ++x)
 	{
-		vector<int> tmp;
-		for (int y = 0; y < nde->size ; ++y)
-			tmp.push_back(nde->map_in_node[x][y]);
-		
-		i = 0;
-		_you = check(tmp, nde);
-		_not_you = check_not_you(tmp, nde);
-		
-		for (int y = 0; y < nde->size ; ++y, i++){
-			_in_cross_maps(nde, x, y, _you[i], _not_you[i]);
-		}
+		// if (x == 4){
+			vector<int> tmp;
+			for (int y = 0; y < nde->size ; ++y){
+				// printf("%3d ", nde->map_in_node[x][y]);
+				tmp.push_back(nde->map_in_node[x][y]);
+			}
+			// printf("\n");
+			i = 0;
+			_you = check(tmp, nde);
+			_not_you = check_not_you(tmp, nde);
+			
+			// for (int y = 0; y < nde->size ; ++y){
+			// 	printf("%3d ", nde->cross_map[x][y]);
+			// }
+			// printf("\n");
+			// printf("\nyou:\n");
+			for (int y = 0; y < nde->size ; ++y, i++){
+				// printf("%3d ", _you[i]);
+				_in_cross_maps(nde, x, y, _you[i], _not_you[i]);
+			}
+			// printf("\ncross_map\n");
+			// for (int y = 0; y < nde->size ; ++y){
+			// 	printf("%3d ", nde->cross_map[x][y]);
+			// }
+			// printf("\ncross_map_not_you:\n");
+			// for (int y = 0; y < nde->size ; ++y){
+				// printf("%3d ", nde->cross_map_not_you[x][y]);
+			// }
+			// printf("\n------\n");
+					// }
 	}
 }
 
 
 void	column(node *nde){
+	printf("column\n");
 	vector<int>		_not_you;
 	vector<int>		_you;
 	int				i;
@@ -746,13 +759,8 @@ void	column(node *nde){
 	for (int y = 0; y < nde->size ; ++y)
 	{
 		vector<int> tmp;
-
-		// printf("\n");
-		for (int x = 0; x < nde->size ; ++x)//{
+		for (int x = 0; x < nde->size ; ++x)
 			tmp.push_back(nde->map_in_node[x][y]);
-			// printf("%d ", nde->map_in_node[x][y]);
-		// }
-		// printf("\n");
 
 		i = 0;
 		_you = check(tmp, nde);
