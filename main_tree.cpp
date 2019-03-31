@@ -8,6 +8,7 @@
 # include <ctime>
 using namespace std;
 
+#define CAPTURE_NUM -2 
 int NUM_NODE;
 
 struct all_variants { 
@@ -66,25 +67,54 @@ void					column(node *nde);
 int 					return_new_var(int tmp, int map);
 void					_in_cross_maps(node *nde, int _X, int _Y, int _you, int _not_you);
 
-void	most_best_variant(node *nde){
-	int tmp_map, tmp_map_not_you, for_tmp;
-	all_variants  tmpvar;
+void	most_best_variant(node *nde, int AI_PLAYER){
+	int				tmp_map, tmp_map_not_you, for_tmp, youCap, otherCap;
+	all_variants	tmpvar;
+
+	// printf("most_best_variant\n");
+	if (nde->now_player == AI_PLAYER){
+		youCap = nde->AIcaptrue;
+		otherCap = nde->HUcaptrue;
+	}
+	else{
+		youCap = nde->HUcaptrue;	
+		otherCap = nde->AIcaptrue;
+	}
+	// printf("you %d  other%d\n", youCap, otherCap);
 	for (int x = 0; x < nde->size; ++x)
 		for (int y = 0; y < nde->size; ++y){
 			tmp_map_not_you = nde->cross_map_not_you[x][y];
 			tmp_map = nde->cross_map[x][y];
-			// printf("x:%d y:%d %d %d\n",x, y,tmp_map, tmp_map_not_you );
+			
+			if (tmp_map < 0){
+				tmp_map -= tmp_map;
+				if (tmp_map < youCap)
+					tmp_map = youCap;
+			}
 			if (tmp_map != 0){
 				for_tmp = 1;
 				while(tmp_map-- > 1)
 					for_tmp *= 10;
 				tmp_map = for_tmp + 1;
+				if (youCap >= otherCap)
+					tmp_map += 1;
+			}
+			// printf("x:%d y:%d %d %d\n",x, y,tmp_map, tmp_map_not_you );
+
+
+			if (tmp_map_not_you < 0){
+				tmp_map_not_you -= tmp_map_not_you;
+				if (tmp_map_not_you < otherCap)
+					tmp_map_not_you = otherCap;
 			}
 			if (tmp_map_not_you != 0){
 				for_tmp = 1;
 				while(tmp_map_not_you-- > 1)
 					for_tmp *= 10;
 				tmp_map_not_you = for_tmp;
+				if (otherCap > youCap)
+					tmp_map_not_you += 1;
+
 			}
 			if ((tmp_map + tmp_map_not_you) > 0){
 				tmpvar.num = tmp_map + tmp_map_not_you;
@@ -93,13 +123,14 @@ void	most_best_variant(node *nde){
 				nde->variants.push_back(tmpvar);
 			}		
 			nde->cross_map[x][y] = tmp_map + tmp_map_not_you;
+			// printf("%d\n", nde->cross_map[x][y]);
 		}
 	sort(nde->variants.begin(), nde->variants.end(), compare_variants);
 
-	for (int i = 0; i < nde->variants.size(); ++i)
-	{
-		printf("Sum %lu  x:%d y:%d\n", nde->variants[i].num, nde->variants[i]._x, nde->variants[i]._y);
-	}
+	// for (int i = 0; i < nde->variants.size(); ++i)
+	// {
+	// 	printf("Sum %lu  x:%d y:%d\n", nde->variants[i].num, nde->variants[i]._x, nde->variants[i]._y);
+	// }
 }
 
 bool	checkRules(int x, int y, int player){
@@ -214,6 +245,10 @@ int			return_heuristic(node *child, int AI_PLAYER){
 				tmp_ai = child->cross_map_not_you[i][j];
 				tmp_rival = child->cross_map[i][j];
 			}
+
+			tmp_ai = -tmp_ai ? tmp_ai < 0 : tmp_ai;
+			tmp_rival = -tmp_rival ? tmp_rival < 0 : tmp_rival;
+
 			if (tmp_ai > 0){
 				if (tmp_ai > 5)
 					AI_player[4] += 1;
@@ -229,6 +264,13 @@ int			return_heuristic(node *child, int AI_PLAYER){
 			}
 		}
 	}
+
+	if (child->AIcaptrue <= 5)
+		AI_player[child->AIcaptrue - 1] += 1;
+
+	if (child->HUcaptrue <= 5)
+		rival_player[child->HUcaptrue - 1] += 1;
+
 	for (int i = 0; i < 5; ++i)
 		AI_player[i] = AI_player[i] - rival_player[i];
 	sum = AI_player[0] +
@@ -307,29 +349,29 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 	if (maximizingPlayer)
 		value = -2147483000;
 
-	printf("%d\n", parent->level_depth);
+	// printf("%d\n", parent->level_depth);
 		
 	row(parent);// if we have 2 free flangs its 2 point if 1 free flang - 1 point ?
 	column(parent);
 	diagonal_left_up(parent);
 	diagonal_right_up(parent);
-	printf("\nparent->cross_map");
-	_print(parent->cross_map);
-	printf("\nparent->cross_map_not_you");
-	_print(parent->cross_map_not_you);
-	exit(1);
+	// printf("\nparent->cross_map");
+	// _print(parent->cross_map);
+	// printf("\nparent->cross_map_not_you");
+	// _print(parent->cross_map_not_you);
+	// exit(1);
 	NUM_NODE += 1;
 	if (parent->level_depth == MAX_DEPTH)
 		return return_heuristic(parent, AI_PLAYER);
 
-	most_best_variant(parent);
+	most_best_variant(parent, AI_PLAYER);
 	for (int i = 0; i < parent->variants.size(); ++i){
 		if (width > 0 and checkRules(parent->variants[i]._y, parent->variants[i]._x, parent->now_player)){
 			int		_x_cap = -1;
 			int		_y_cap = -1;
 			int		res = this_win_finally(parent->variants[i]._x, parent->variants[i]._y, parent->now_player, &_x_cap, &_y_cap);
 			// res ->  0==not win 1==finally win     2==win but can capture this
-			
+			// printf("VAR X%d VAR y%d\n", parent->variants[i]._x, parent->variants[i]._y);
 			if (res == 1){
 				if (maximizingPlayer)
 					parent->heuristics = 200000000;
@@ -340,31 +382,29 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 				return parent->heuristics;
 			}
 			else {
-				parent->variants[i]._x = 3;
-				parent->variants[i]._y = 2;
 				child_tmp = create_node(parent, parent->variants[i]._x, parent->variants[i]._y, AI_PLAYER);
-	
-				printf("AI: %d    HU: %d\n", child_tmp->AIcaptrue, child_tmp->HUcaptrue);
-				if (child_tmp->other_player == AI_PLAYER && child_tmp->AIcaptrue == 5){
-					printf("AI win\n");
-					printf("maximizingPlayer %d\n", maximizingPlayer);
-					exit(1);
+				// printf("x%d y%d\n", parent->variants[i]._x, parent->variants[i]._y);
+				// printf("AI: %d    HU: %d\n", child_tmp->AIcaptrue, child_tmp->HUcaptrue);
+				if (child_tmp->other_player == AI_PLAYER && child_tmp->AIcaptrue >= 5){
+					// printf("AI win\n");
+					// printf("maximizingPlayer %d\n", maximizingPlayer);
+					// exit(1);
 					parent->heuristics = 200000000;
 					parent->x = parent->variants[i]._x;
 					parent->y = parent->variants[i]._y;
 					return parent->heuristics;
 				}
-				if (child_tmp->other_player != AI_PLAYER && child_tmp->HUcaptrue == 5){
-					printf("HU win\n");
-					exit(1);
+				if (child_tmp->other_player != AI_PLAYER && child_tmp->HUcaptrue >= 5){
+					// printf("HU win\n");
+					// exit(1);
 					parent->heuristics = -200000000;
 					parent->x = parent->variants[i]._x;
 					parent->y = parent->variants[i]._y;
 					return parent->heuristics;
 				}
-				exit(1);
+				// exit(1);
 				width--;
-				printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
+				// printf("\ndep = %d   x=%d y=%d\n\n", child_tmp->level_depth, parent->variants[i]._x, parent->variants[i]._y);
 				// _print(child_tmp->map_in_node);
 				if (res == 2){
 					all_variants  tmpvar;
@@ -372,7 +412,7 @@ int		minimax(node *parent, int MAX_DEPTH ,int MAX_WIDTH, int AI_PLAYER, int alph
 					tmpvar._x = _x_cap;
 					tmpvar._y = _y_cap;
 					child_tmp->variants.push_back(tmpvar);
-					printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
+					// printf("next must be   x:%d y:%x\n", _x_cap, _y_cap);
 				}
 				result = minimax(parent->nodes[child_num], MAX_DEPTH, MAX_WIDTH, AI_PLAYER, alpha, beta, !maximizingPlayer, USE_OPTIMIZATION);
 				child_num += 1;
@@ -461,7 +501,7 @@ int main()
 
 	tmp = _find_where_go(AI_PLAYER, MAX_DEPTH, MAX_WIDTH, read_from_file(), USE_OPTIMIZATION, AIcaptrue, HUcaptrue);
 	printf("%lu\n", tmp.num);
-	printf("%d %d\n", tmp._x, tmp._y);
+	printf("x:%d y:%d\n", tmp._y, tmp._x);
 	return 0;
 }
 
@@ -494,15 +534,15 @@ int 	return_new_var(int tmp, int map)
 
 void	_in_cross_maps(node *nde, int _X, int _Y, int _you, int _not_you)
 {
-	if (_you == -1){
+	if (_you < 0){
 		nde->cross_map_not_you[_X][_Y] = return_new_var(_you, nde->cross_map_not_you[_X][_Y]);
-		_you = 2;
+		_you = -1 * _you;
 	}
 	nde->cross_map[_X][_Y] = return_new_var(_you, nde->cross_map[_X][_Y]);
 
-	if (_not_you == -1){
+	if (_not_you < 0){
 		nde->cross_map[_X][_Y] = return_new_var(_not_you, nde->cross_map[_X][_Y]);
-		_not_you = 2;
+		_not_you = -1 * _not_you;
 	}
 	nde->cross_map_not_you[_X][_Y] = return_new_var(_not_you, nde->cross_map_not_you[_X][_Y]);
 }
@@ -575,13 +615,13 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 				if (tmp[i] == 0){
 					_new[i] = num > _new[i] ? num : _new[i];
 					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
-						_new[i] = -1;
+						_new[i] = CAPTURE_NUM;
 					} 
 				}
 				if (left_i != -1){
 					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 					if (tmp[i] != 0 and tmp[i] == now_node->now_player and num == 2){//need for 0 1 1 -1, if we have flang not our
-						_new[left_i] = -1;
+						_new[left_i] = CAPTURE_NUM;
 					}
 				}
 			}
@@ -590,7 +630,7 @@ vector<int>	check_not_you(vector<int>  tmp, node *now_node){
 		}
 	}
 	if(num and left_i != -1)
-			_new[left_i] = num > _new[left_i] ? num : _new[left_i];
+		_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 	return _new;
 }
 
@@ -615,13 +655,13 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 				if (tmp[i] == 0){
 					_new[i] = num > _new[i] ? num : _new[i];
 					if (i > 2 and left_i == -1 and num == 2){//need for -1 1 1 0, if we have flang not our
-						_new[i] = -1;
+						_new[i] = CAPTURE_NUM;
 					}
 				}
 				if (left_i != -1){
 					_new[left_i] = num > _new[left_i] ? num : _new[left_i];
 					if (tmp[i] != 0 and tmp[i] != now_node->now_player and num == 2){
-						_new[left_i] = -1;
+						_new[left_i] = CAPTURE_NUM;
 					}
 				}
 			}
@@ -637,7 +677,6 @@ vector<int>	check(vector<int>  tmp, node *now_node){
 
 
 void	diagonal_left_up(node *nde){
-	printf("diagonal_left_up\n");
 	vector<int>		_you;
 	vector<int>		_not_you;
 	int 			i;
@@ -676,7 +715,6 @@ void	diagonal_left_up(node *nde){
 
 
 void	diagonal_right_up(node *nde){
-	printf("diagonal_right_up\n");
 	vector<int> 	_you;
 	vector<int> 	_not_you;
 	int				i;
@@ -710,48 +748,24 @@ void	diagonal_right_up(node *nde){
 
 
 void	row(node *nde){
-	printf("row\n");
-	vector<int>  _you;
-	vector<int>  _not_you;
-	int i;
+	vector<int>		_you;
+	vector<int>		_not_you;
+	int 			i;
 	for (int x = 0; x < nde->size ; ++x)
 	{
-		// if (x == 4){
-			vector<int> tmp;
-			for (int y = 0; y < nde->size ; ++y){
-				// printf("%3d ", nde->map_in_node[x][y]);
-				tmp.push_back(nde->map_in_node[x][y]);
-			}
-			// printf("\n");
-			i = 0;
-			_you = check(tmp, nde);
-			_not_you = check_not_you(tmp, nde);
-			
-			// for (int y = 0; y < nde->size ; ++y){
-			// 	printf("%3d ", nde->cross_map[x][y]);
-			// }
-			// printf("\n");
-			// printf("\nyou:\n");
-			for (int y = 0; y < nde->size ; ++y, i++){
-				// printf("%3d ", _you[i]);
-				_in_cross_maps(nde, x, y, _you[i], _not_you[i]);
-			}
-			// printf("\ncross_map\n");
-			// for (int y = 0; y < nde->size ; ++y){
-			// 	printf("%3d ", nde->cross_map[x][y]);
-			// }
-			// printf("\ncross_map_not_you:\n");
-			// for (int y = 0; y < nde->size ; ++y){
-				// printf("%3d ", nde->cross_map_not_you[x][y]);
-			// }
-			// printf("\n------\n");
-					// }
+		vector<int> tmp;
+		for (int y = 0; y < nde->size ; ++y)
+			tmp.push_back(nde->map_in_node[x][y]);
+		i = 0;
+		_you = check(tmp, nde);
+		_not_you = check_not_you(tmp, nde);
+		for (int y = 0; y < nde->size ; ++y, i++)
+			_in_cross_maps(nde, x, y, _you[i], _not_you[i]);
 	}
 }
 
 
 void	column(node *nde){
-	printf("column\n");
 	vector<int>		_not_you;
 	vector<int>		_you;
 	int				i;
